@@ -1,0 +1,24 @@
+{
+    "version": "2.0",
+    "logging": {
+        "applicationInsights": {
+            "samplingSettings": {
+                "isEnabled": false
+            }
+        },
+        "logLevel": {
+            "Function": "Warning",
+            "Function.GetVersion.User": "Information",
+            "Function.PostAccountUser.User": "Information",
+            "Function.GetAccountToken.User": "Information",
+            "Function.GetTrainingMenu.User": "Information",
+            "Function.PostTrainingRecord.User": "Information",
+            "Host.Results": "Warning"
+        }
+    },
+    "extensions": {
+        "http": {
+            "routePrefix": "api/1.0"
+        }
+    }
+}
