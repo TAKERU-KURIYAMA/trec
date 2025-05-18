@@ -65,21 +65,16 @@ namespace API.Training
             , Input input, User user, TrainingMenu menu)
         {
             bool weightParsed = int.TryParse(input.Weight, out var parsedWeight);
-
-            TrainingRecordSet? trainingRecordSet = context.TrainingRecordSets.Where(
-                x => x.UserCommonId == user.UserCommonId
-                && x.MenuId == menu.MenuId
-                && x.TrainingDate == input.DateTimeTrainingDate
-                && x.SetNumber == int.Parse(input.SetNumber!)).FirstOrDefault();
-
-            if (trainingRecordSet == null )
-            {
+            TrainingRecordSet? trainingRecordSet = new TrainingRecordSet();
+            if (string.IsNullOrEmpty(input.SetNumber))
+            { 
+                int setNumber = GetNextSetNumber(context,user,menu,input.DateTimeTrainingDate);
                 trainingRecordSet = new TrainingRecordSet
                 {
                     UserCommonId = user.UserCommonId,
                     MenuId = menu.MenuId,
                     TrainingDate = input.DateTimeTrainingDate,
-                    SetNumber = int.Parse(input.SetNumber!),
+                    SetNumber = setNumber,
                     Reps = int.Parse(input.Reps!),
                     Weight = weightParsed ? parsedWeight : null,
                     CreatedAt = Utility.GetJstNow(),
@@ -89,16 +84,37 @@ namespace API.Training
             }
             else
             {
-                trainingRecordSet.SetNumber = int.Parse(input.SetNumber!);
-                trainingRecordSet.Reps = int.Parse(input.Reps!);
-                trainingRecordSet.Weight = weightParsed ? parsedWeight : null;
-                trainingRecordSet.UpdatedAt = Utility.GetJstNow();
-            } 
+                trainingRecordSet = context.TrainingRecordSets.Where(
+                    x => x.UserCommonId == user.UserCommonId
+                    && x.MenuId == menu.MenuId
+                    && x.TrainingDate == input.DateTimeTrainingDate
+                    && x.SetNumber == int.Parse(input.SetNumber!)).FirstOrDefault();
+                if (trainingRecordSet == null)
+                {
+                    throw new AppException(FoundationCode.Errors.CLIENT_PARAMETER_ERROR, "指定されたセット番号は存在しません");
+                }
+                else
+                {
+                    trainingRecordSet.Reps = int.Parse(input.Reps!);
+                    trainingRecordSet.Weight = weightParsed ? parsedWeight : null;
+                    trainingRecordSet.UpdatedAt = Utility.GetJstNow();
+                }
+            }
             context.SaveChanges();
             TrainingUtil.AggregateDailyTrainingRecord(context, input.DateTimeTrainingDate, user, menu!);
 
             context.SaveChanges();
             return trainingRecordSet;
+        }
+
+        private static int GetNextSetNumber(MessageRDBContext context, User user, TrainingMenu menu, DateOnly date)
+        { 
+            return 1 + context.TrainingRecordSets
+                        .Where(x => x.UserCommonId == user.UserCommonId
+                            && x.MenuId == menu.MenuId
+                            && x.TrainingDate == date)
+                        .Select(x => (int?)x.SetNumber)
+                        .Max() ?? 0;
         }
 
         /// <summary>
@@ -138,6 +154,9 @@ namespace API.Training
 
             public void SetParameter(HttpRequest req)
             {
+                // Content-Typeチェック
+                Utility.ValidateTypeXWwwFormUrlencoded(req.ContentType!);
+
                 Authorization = req.Headers[FoundationCode.Header.AUTHORIZATION].ToString();
                 MenuId = req.Form.FirstOrDefault(x => x.Key == FoundationCode.Body.MENU_ID).Value.ToString();
                 TrainingDate = req.Form.FirstOrDefault(x => x.Key == FoundationCode.Body.TRAINING_DATE).Value.ToString();
@@ -163,10 +182,10 @@ namespace API.Training
                 {
                     throw new AppException(FoundationCode.Errors.CLIENT_PARAMETER_ERROR, "training_dateに使用できない文字が含まれています");
                 }
-
-                ValidateUtil.IndispensableParam(SetNumber!, FoundationCode.Body.SET_NUMBER);
-                ValidateUtil.FormatParam(SetNumber!, FoundationCode.Body.SET_NUMBER, FoundationCode.Regex.Pattern.SET_NUMBER);
-
+                if (!string.IsNullOrEmpty(SetNumber))
+                {
+                    ValidateUtil.FormatParam(SetNumber!, FoundationCode.Body.SET_NUMBER, FoundationCode.Regex.Pattern.SET_NUMBER);
+                }
                 ValidateUtil.IndispensableParam(Reps!, FoundationCode.Body.REPS);
                 ValidateUtil.FormatParam(Reps!, FoundationCode.Body.REPS, FoundationCode.Regex.Pattern.REPS);
                 if (!string.IsNullOrEmpty(Weight))

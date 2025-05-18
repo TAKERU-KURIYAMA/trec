@@ -99,6 +99,8 @@ namespace Common
             public const string REPS = "reps";
             public const string WEIGHT = "weight";
 
+            public const string FROM_DATE = "from_date";
+            public const string TO_DATE = "to_date";
 
         }
         /// <summary>
@@ -122,6 +124,8 @@ namespace Common
                 public const string REPS = @"^\d{1,3}$";
                 public const string WEIGHT = @"^\d{1,3}$";
 
+                public const string FROM_DATE = @"^\d{4}-\d{2}-\d{2}$";
+                public const string TO_DATE = @"^\d{4}-\d{2}-\d{2}$";
 
             }
 
