@@ -1,11 +1,12 @@
-// https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  pages: true,
-  compatibilityDate: '2024-11-01',
-  devtools: { enabled: true },
+  app: {
+    head: {
+      title: 'トレーニング記録',
+    },
+  },
   runtimeConfig: {
     public: {
-      apiBaseUrl: process.env.API_BASE_URL || 'http://localhost:5000'
-    }
-  }
+      apiBaseUrl: process.env.API_BASE_URL || 'http://localhost:7204/api/1.0',
+    },
+  },
 })

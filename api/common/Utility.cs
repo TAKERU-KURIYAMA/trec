@@ -26,6 +26,7 @@ namespace Common
             }
             throw new AppException(FoundationCode.Errors.CLIENT_PARAMETER_ERROR, "Content-Typeが不正です");
         }
+
         /// <summary>
         /// JST時刻取得
         /// </summary>
@@ -58,7 +59,7 @@ namespace Common
         /// 共通IDからuserオブジェクト取得
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="loginId"></param>
+        /// <param name="userCommonId"></param>
         /// <returns></returns>
         /// <exception cref="AppException"></exception>
         public static User GetUserCommonId(MessageRDBContext context, string userCommonId)
@@ -96,7 +97,5 @@ namespace Common
             var pbkdf2 = new Rfc2898DeriveBytes(password, Convert.FromBase64String(salt), 10000, HashAlgorithmName.SHA256);
             return Convert.ToBase64String(pbkdf2.GetBytes(32));
         }
-
-
     }
 }

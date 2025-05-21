@@ -6,17 +6,21 @@ services:
   #   depends_on:
   #     - backend
 
-  # backend:
-  #   build: ./backend
-  #   ports:
-  #     - "5000:80"
-  #   environment:
-  #     - ConnectionStrings__DefaultConnection=Server=db;Database=MessageRDB;User=sa;Password=Your_password123;
-  #     - Redis__Host=redis
-  #   depends_on:
-  #     - db
-  #     - redis
-
+  api:
+    build: ./api
+    ports:
+      - "5000:80"
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=db;Database=MessageRDB;User=sa;Password=Your_password123;
+      - Redis__Host=redis
+      - AzureWebJobsStorage=UseDevelopmentStorage=true
+      - FUNCTIONS_WORKER_RUNTIME=dotnet-isolated
+      - JWT__Secret=YwN7c!@#m02zL*sd82lMk!adwaf4d2rg
+      - ACCESS_TOKEN_EXPIRE_MIN=15
+      - REFRESH_TOKEN_EXPIRE_MIN=20160
+    depends_on:
+      - db
+      - redis
   db:
     image: mcr.microsoft.com/mssql/server:2022-latest
     ports:
