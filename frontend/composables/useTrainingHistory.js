@@ -12,7 +12,7 @@ export default function useTrainingHistory() {
     }
 
     try {
-      const res = await axios.get(`http://localhost:7204/api/1.0/training/daily`, {
+      const res = await axios.get(`${config.public.apiBaseUrl}/training/daily`, {
         params: { menuId }
       })
 

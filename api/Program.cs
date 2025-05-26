@@ -1,35 +1,49 @@
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Api.Models;
+using Services;
 using Microsoft.EntityFrameworkCore;
-using Api.Models; // DbContext ÇÃñºëOãÛä‘
-using Services;        // DIÇ∑ÇÈÉTÅ[ÉrÉXÇÃñºëOãÛä‘
 
-var host = new HostBuilder()
-    .ConfigureFunctionsWebApplication()
-    .ConfigureAppConfiguration(config =>
-    {
-        config.AddEnvironmentVariables(); // ä¬ã´ïœêîÇì«Ç›çûÇﬁ
-    })
-    .ConfigureServices((context, services) =>
-    {
-        var configuration = context.Configuration;
+try
+{
+    Console.WriteLine("=== Ëµ∑ÂãïÈñãÂßã ===");
 
-        // ê⁄ë±ï∂éöóÒÇÃì«Ç›çûÇ›Åiä¬ã´ïœêî: ConnectionStrings__DefaultConnectionÅj
-        var connectionString = configuration["ConnectionStrings:DefaultConnection"];
-        if (string.IsNullOrEmpty(connectionString))
+    var host = Host.CreateDefaultBuilder()
+        .ConfigureFunctionsWorkerDefaults()
+        .ConfigureAppConfiguration(config =>
         {
-            throw new InvalidOperationException("ê⁄ë±ï∂éöóÒÇ™ê›íËÇ≥ÇÍÇƒÇ¢Ç‹ÇπÇÒÅBä¬ã´ïœêî 'ConnectionStrings__DefaultConnection' ÇämîFÇµÇƒÇ≠ÇæÇ≥Ç¢ÅB");
-        }
+            config.AddEnvironmentVariables();
+        })
+        .ConfigureServices((context, services) =>
+        {
+            var config = context.Configuration;
 
-        // DbContext ìoò^
-        services.AddDbContext<MessageRDBContext>(options =>
-            options.UseSqlServer(connectionString));
+            Console.WriteLine("JWT__SECRET: " + config["JWT__SECRET"]);
+            Console.WriteLine("JWT__ISSUER: " + config["JWT__ISSUER"]);
+            Console.WriteLine("JWT__AUDIENCE: " + config["JWT__AUDIENCE"]);
 
-        // ëºÇÃÉTÅ[ÉrÉXìoò^
-        services.AddScoped<IAuthService, AuthService>();
-        services.AddSingleton<IJwtService, JwtService>();
-    })
-    .Build();
+            var jwtSecret = config["JWT__SECRET"];
+            var jwtIssuer = config["JWT__ISSUER"];
+            var jwtAudience = config["JWT__AUDIENCE"];
 
-host.Run();
+            if (string.IsNullOrEmpty(jwtSecret) || string.IsNullOrEmpty(jwtIssuer) || string.IsNullOrEmpty(jwtAudience))
+                throw new InvalidOperationException("JWTË®≠ÂÆöÂÄ§„Åå‰∏çË∂≥„Åó„Å¶„ÅÑ„Åæ„Åô");
+
+            services.AddSingleton<IJwtService>(new JwtService(jwtSecret, jwtIssuer, jwtAudience));
+
+            var connectionString = config["ConnectionStrings:DefaultConnection"];
+            Console.WriteLine("Êé•Á∂öÊñáÂ≠óÂàó: " + connectionString);
+            services.AddDbContext<MessageRDBContext>(options => options.UseSqlServer(connectionString));
+        })
+        .Build();
+
+    Console.WriteLine("=== Ëµ∑ÂãïÂÆüË°å ===");
+    host.Run();
+}
+catch (Exception ex)
+{
+    Console.WriteLine("=== Ëµ∑ÂãïÊôÇ‰æãÂ§ñ ===");
+    Console.WriteLine(ex.ToString());
+    throw;
+}

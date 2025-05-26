@@ -1,18 +1,21 @@
+# ビルドステージ
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# ソースコピー
-COPY ["Api/Api.csproj", "Api/"]
-RUN dotnet restore "Api/Api.csproj"
-COPY . .
+COPY ["api/Api.csproj", "api/"]
+RUN dotnet restore "api/Api.csproj"
 
-WORKDIR "/src/Api"
+COPY ./api/ ./api/
+WORKDIR /src/api
 RUN dotnet publish "Api.csproj" -c Release -o /app/publish
 
-# 実行イメージ
-FROM mcr.microsoft.com/dotnet/aspnet:8.0
-WORKDIR /app
+FROM mcr.microsoft.com/azure-functions/dotnet-isolated:4
+WORKDIR /home/site/wwwroot
+
+# アプリ本体のビルド成果物
 COPY --from=build /app/publish .
 
-# Azure Functions の起動コマンド
-ENTRYPOINT ["dotnet", "Api.dll"]
+# 🔽 必要な設定ファイルと bin ディレクトリを追加でコピー
+COPY ./api/host.json .
+COPY ./api/local.settings.json .
+COPY ./api/bin ./bin

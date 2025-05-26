@@ -1,6 +1,8 @@
 export async function useFetchMenus() {
+  const config = useRuntimeConfig()
+
   try {
-    const res = await fetch('http://localhost:7204/api/1.0/training/menu')
+    const res = await fetch(`${config.public.apiBaseUrl}/training/menu`)
     const data = await res.json()
 
     console.log('API Response:', data)
