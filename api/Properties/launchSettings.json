@@ -1,9 +1,14 @@
 {
-  "profiles": {
-    "Api": {
-      "commandName": "Project",
-      "commandLineArgs": "--port 7204",
-      "launchBrowser": false
+    "profiles": {
+        "Api": {
+            "commandName": "Project",
+            "commandLineArgs": "--port 7204",
+            "launchBrowser": false,
+            "environmentVariables": {
+                "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+                "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+                //"functions__worker__hostendpoint": "http://127.0.0.1:9091"
+            }
+        }
     }
-  }
 }

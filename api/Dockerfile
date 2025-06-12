@@ -3,19 +3,18 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 COPY ["api/Api.csproj", "api/"]
+COPY ["api/efpt.config.json", "api/"]
 RUN dotnet restore "api/Api.csproj"
 
 COPY ./api/ ./api/
 WORKDIR /src/api
-RUN dotnet publish "Api.csproj" -c Release -o /app/publish
+RUN dotnet build "Api.csproj" -c Release -o /app/build
+RUN dotnet publish "Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
-FROM mcr.microsoft.com/azure-functions/dotnet-isolated:4
-WORKDIR /home/site/wwwroot
-
-# アプリ本体のビルド成果物
+# ランタイムステージ - 標準的な ASP.NET Core
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
+WORKDIR /app
 COPY --from=build /app/publish .
 
-# 🔽 必要な設定ファイルと bin ディレクトリを追加でコピー
-COPY ./api/host.json .
-COPY ./api/local.settings.json .
-COPY ./api/bin ./bin
+EXPOSE 80
+ENTRYPOINT ["dotnet", "Api.dll"]
