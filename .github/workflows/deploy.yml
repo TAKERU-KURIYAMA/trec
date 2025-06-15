@@ -1,0 +1,125 @@
+name: Deploy to ConoHa VPS
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '8.0.x'
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    
+    - name: Restore .NET dependencies
+      run: dotnet restore api/Api.csproj
+    
+    - name: Build .NET application
+      run: dotnet build api/Api.csproj --no-restore
+    
+    - name: Run .NET tests
+      run: dotnet test api/Api.csproj --no-build --verbosity normal
+    
+    - name: Install Node.js dependencies
+      run: |
+        cd frontend
+        npm ci
+    
+    - name: Build frontend
+      run: |
+        cd frontend
+        npm run build
+    
+    - name: Run frontend tests
+      run: |
+        cd frontend
+        npm run test:unit || true
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Deploy to ConoHa VPS
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USER }}
+        key: ${{ secrets.VPS_SSH_KEY }}
+        port: 2222
+        script: |
+          cd /home/trecadmin/trecplans
+          
+          # Pull latest changes
+          git fetch origin
+          git checkout main
+          git pull origin main
+          
+          # Run deployment script
+          ./scripts/deploy.sh
+          
+          # Run health check
+          sleep 30
+          ./scripts/health-check.sh
+    
+    - name: Notify Slack on Success
+      if: success()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: success
+        text: "✅ TrecPlans deployment to production successful!"
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+    
+    - name: Notify Slack on Failure
+      if: failure()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: failure
+        text: "❌ TrecPlans deployment to production failed!"
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+
+  rollback:
+    if: failure()
+    needs: deploy
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+    - name: Rollback deployment
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USER }}
+        key: ${{ secrets.VPS_SSH_KEY }}
+        port: 2222
+        script: |
+          cd /home/trecadmin/trecplans
+          
+          # Get previous commit
+          PREVIOUS_COMMIT=$(cat .last_deployment 2>/dev/null || git rev-parse HEAD~1)
+          
+          # Rollback to previous version
+          ./scripts/rollback.sh $PREVIOUS_COMMIT

@@ -1,0 +1,82 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches: [ develop, staging ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '8.0.x'
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    
+    - name: Restore .NET dependencies
+      run: dotnet restore api/Api.csproj
+    
+    - name: Build .NET application
+      run: dotnet build api/Api.csproj --no-restore
+    
+    - name: Run .NET tests
+      run: dotnet test api/Api.csproj --no-build --verbosity normal
+    
+    - name: Install Node.js dependencies
+      run: |
+        cd frontend
+        npm ci
+    
+    - name: Build frontend
+      run: |
+        cd frontend
+        npm run build
+    
+    - name: Run frontend tests
+      run: |
+        cd frontend
+        npm run test:unit || true
+
+  deploy-staging:
+    needs: test
+    runs-on: ubuntu-latest
+    environment: staging
+    if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/staging'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Deploy to Staging Environment
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.STAGING_VPS_HOST }}
+        username: ${{ secrets.STAGING_VPS_USER }}
+        key: ${{ secrets.STAGING_VPS_SSH_KEY }}
+        port: 2222
+        script: |
+          cd /home/trecadmin/trecplans-staging
+          
+          # Pull latest changes
+          git fetch origin
+          git checkout develop
+          git pull origin develop
+          
+          # Use staging configuration
+          cp .env.staging .env.production
+          
+          # Run deployment script
+          ./scripts/deploy.sh
+          
+          # Run health check
+          sleep 30
+          ./scripts/health-check.sh

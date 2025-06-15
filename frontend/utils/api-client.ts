@@ -149,8 +149,84 @@ export class ApiClient {
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl.replace(/\/$/, '') // 末尾のスラッシュを除去
     
-    // 定期的にキャッシュクリーンアップを実行
-    setInterval(() => this.cache.cleanup(), 60000) // 1分ごと
+    // 定期的にキャッシュクリーンアップを実行（クライアントサイドのみ）
+    if (typeof window !== 'undefined' && process.client) {
+      // Nuxtのライフサイクルを使用してSSR中の実行を回避
+      const startCleanup = () => {
+        // onNuxtReadyを使用してNuxtの準備が完了してから実行
+        if (typeof window.$nuxt !== 'undefined') {
+          window.$nuxt.$nextTick(() => {
+            setInterval(() => this.cache.cleanup(), 60000) // 1分ごと
+          })
+        } else {
+          // Fallback: DOMContentLoadedイベントを使用
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+              setInterval(() => this.cache.cleanup(), 60000)
+            })
+          } else {
+            setInterval(() => this.cache.cleanup(), 60000)
+          }
+        }
+      }
+      
+      startCleanup()
+    }
+  }
+
+  /**
+   * 認証トークンを取得
+   */
+  private getAuthToken(): string | null {
+    if (typeof window !== 'undefined') {
+      // グローバルに設定されたトークンを最優先
+      if (window.__authToken) {
+        return window.__authToken
+      }
+      
+      // フォールバック: セキュアストレージから取得
+      return this.getTokenFromStorage()
+    }
+    return null
+  }
+
+  private getTokenFromStorage(): string | null {
+    try {
+      const stored = localStorage.getItem('message_app_auth_token')
+      if (stored) {
+        const data = JSON.parse(stored)
+        // セキュアストレージの構造を考慮してvalueを復号化
+        if (data.value) {
+          // 簡易復号化を試行
+          try {
+            const key = localStorage.getItem('message_app_key') || 'default'
+            let decoded = atob(data.value)
+            let result = ''
+            for (let i = 0; i < decoded.length; i++) {
+              result += String.fromCharCode(
+                decoded.charCodeAt(i) ^ key.charCodeAt(i % key.length)
+              )
+            }
+            return result
+          } catch {
+            return data.value
+          }
+        }
+        return data
+      }
+    } catch {
+      // フォールバック: 文字列として保存されている場合
+      return localStorage.getItem('message_app_auth_token')
+    }
+    return null
+  }
+
+  /**
+   * 認証ヘッダーを取得
+   */
+  private getAuthHeaders(): Record<string, string> {
+    const token = this.getAuthToken()
+    return token ? { Authorization: `Bearer ${token}` } : {}
   }
 
   /**
@@ -195,6 +271,7 @@ export class ApiClient {
           signal: controller.signal,
           headers: {
             'Content-Type': 'application/json',
+            ...this.getAuthHeaders(),
             ...fetchOptions.headers,
           },
         })
@@ -203,6 +280,31 @@ export class ApiClient {
 
         if (!response.ok) {
           const errorData = await this.parseErrorResponse(response)
+          
+          // 認証エラーの場合、トークンをクリア
+          if (response.status === 401) {
+            if (typeof window !== 'undefined') {
+              // 直接localStorageをクリア
+              localStorage.removeItem('auth_token')
+              localStorage.removeItem('auth_user')
+              localStorage.removeItem('message_app_auth_token')
+              localStorage.removeItem('message_app_auth_user')
+              
+              // Pinia storeをクリア（可能であれば）
+              try {
+                if (window.$nuxt && window.$nuxt.$pinia) {
+                  const { useAuthStore } = await import('~/stores/auth')
+                  const authStore = useAuthStore()
+                  authStore.clearAuth()
+                }
+              } catch (error) {
+                console.warn('Failed to clear auth store:', error)
+              }
+              
+              // ログインページへのリダイレクトは削除（ページ内でモーダル表示のため）
+            }
+          }
+          
           throw new ApiError(
             errorData.code || `HTTP_${response.status}`,
             errorData.message || `HTTP Error ${response.status}`,
@@ -211,31 +313,66 @@ export class ApiClient {
           )
         }
 
-        const data = await response.json() as ApiResponse<T>
+        let data = await response.json()
+        console.log(`[API Response Debug] ${endpoint}:`, data)
 
-        // APIレスポンスのフォーマット確認
-        if (typeof data.code !== 'string') {
-          throw new Error('APIレスポンスの形式が不正です')
+        // ASP.NET Core ActionResult wrapper の確認
+        if ('value' in data && 'statusCode' in data) {
+          console.log(`[API] Unwrapping ActionResult for ${endpoint}`)
+          data = data.value
         }
 
-        // ビジネスロジックエラーのチェック
-        if (data.code !== '00000') {
-          throw new ApiError(
-            data.code,
-            data.message || 'APIエラーが発生しました',
-            200, // HTTPステータスは200だがビジネスロジックエラー
-            data as ApiErrorResponse
-          )
+        // 新しいAPIレスポンス形式をチェック（success/error形式）
+        if ('success' in data) {
+          if (!data.success) {
+            throw new ApiError(
+              data.error?.code || 'UNKNOWN_ERROR',
+              data.error?.message || 'APIエラーが発生しました',
+              200,
+              data.error
+            )
+          }
+          console.log(`[API Success] ${endpoint}`)
+          
+          // キャッシュに保存
+          if (useCache && data.data) {
+            this.cache.set(cacheKey, data.data, cacheLifetime)
+          }
+          
+          return data.data as T
         }
 
-        console.log(`[API Success] ${endpoint}`)
-
-        // キャッシュに保存
-        if (useCache && data.result) {
-          this.cache.set(cacheKey, data.result, cacheLifetime)
+        // 旧形式のAPIレスポンスのフォーマット確認
+        if ('isSuccess' in data) {
+          // ビジネスロジックエラーのチェック
+          if (!data.isSuccess || data.errorCode) {
+            throw new ApiError(
+              data.errorCode || 'UNKNOWN_ERROR',
+              data.userMessage || 'APIエラーが発生しました',
+              200,
+              data as ApiErrorResponse
+            )
+          }
+          
+          console.log(`[API Success] ${endpoint}`)
+          
+          // キャッシュに保存
+          if (useCache && data.data) {
+            this.cache.set(cacheKey, data.data, cacheLifetime)
+          }
+          
+          return data.data as T
         }
 
-        return data.result || data as T
+        // どの形式にも該当しない場合
+        console.warn(`[API Warning] Unknown response format for ${endpoint}:`, {
+          hasSuccess: 'success' in data,
+          hasIsSuccess: 'isSuccess' in data,
+          keys: Object.keys(data)
+        })
+        
+        // フォールバック: dataをそのまま返す
+        return data as T
 
       } catch (error) {
         lastError = error as Error
@@ -381,19 +518,19 @@ export class TrainingApi {
     })
 
     // APIレスポンスをフロントエンド用の型に変換
-    const menus: TrainingMenu[] = response.response_menus.map(menu => ({
-      menuId: menu.MenuId,
-      jpName: menu.JPName,
-      enName: menu.ENName,
-      description: menu.Description,
-      createdAt: menu.CreatedAt ? new Date(menu.CreatedAt) : null,
-      tagIds: menu.Tags.map(tag => tag.TagId)
+    const menus: TrainingMenu[] = response.menus.map(menu => ({
+      menuId: menu.menuId,
+      jpName: menu.jpName,
+      enName: menu.enName,
+      description: menu.description,
+      createdAt: menu.createdAt ? new Date(menu.createdAt) : null,
+      tagIds: menu.tagIds || []
     }))
 
-    const tags: TrainingTag[] = response.response_tags.map(tag => ({
-      tagId: tag.TagId,
-      jpName: tag.JPName,
-      enName: tag.ENName
+    const tags: TrainingTag[] = response.tags.map(tag => ({
+      tagId: tag.tagId,
+      jpName: tag.jpName,
+      enName: tag.enName
     }))
 
     return { menus, tags }
@@ -439,6 +576,42 @@ export class TrainingApi {
     this.client.invalidateCache('/training/history')
     this.client.invalidateCache('/training/dashboard')
   }
+
+  /**
+   * 汎用 GET リクエスト
+   */
+  async get<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
+    // トレーニング関連のエンドポイントのプレフィックスを自動追加
+    const fullEndpoint = endpoint.startsWith('/') ? `/training${endpoint}` : `/training/${endpoint}`
+    return this.client.get<T>(fullEndpoint, options)
+  }
+
+  /**
+   * 汎用 POST リクエスト
+   */
+  async post<T>(endpoint: string, data?: any, options: RequestOptions = {}): Promise<T> {
+    // トレーニング関連のエンドポイントのプレフィックスを自動追加
+    const fullEndpoint = endpoint.startsWith('/') ? `/training${endpoint}` : `/training/${endpoint}`
+    return this.client.post<T>(fullEndpoint, data, options)
+  }
+
+  /**
+   * 汎用 PUT リクエスト
+   */
+  async put<T>(endpoint: string, data?: any, options: RequestOptions = {}): Promise<T> {
+    // トレーニング関連のエンドポイントのプレフィックスを自動追加
+    const fullEndpoint = endpoint.startsWith('/') ? `/training${endpoint}` : `/training/${endpoint}`
+    return this.client.put<T>(fullEndpoint, data, options)
+  }
+
+  /**
+   * 汎用 DELETE リクエスト
+   */
+  async delete<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
+    // トレーニング関連のエンドポイントのプレフィックスを自動追加
+    const fullEndpoint = endpoint.startsWith('/') ? `/training${endpoint}` : `/training/${endpoint}`
+    return this.client.delete<T>(fullEndpoint, options)
+  }
 }
 
 // ===================================
@@ -468,6 +641,17 @@ export function useApiClient() {
   }
   return defaultClient
 }
+
+/**
+ * 簡単にAPIクライアントを使用するためのエクスポート
+ * Development: direct API access on port 5001
+ * Production: relative /api path through nginx proxy
+ */
+export const apiClient = new ApiClient(
+  typeof window !== 'undefined' 
+    ? (window.location.port === '8080' ? '' : 'http://localhost:5001')
+    : ''
+)
 
 // 開発環境でのデバッグ用
 if (process.dev) {

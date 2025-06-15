@@ -26,14 +26,14 @@
         
         <div class="menu-tags">
           <span 
-            v-for="tag in menu.tags?.slice(0, 3)"
-            :key="tag.tagId"
+            v-for="tagId in menu.tagIds?.slice(0, 3)"
+            :key="tagId"
             class="tag"
           >
-            {{ tag.tagId }}
+            {{ tagId }}
           </span>
-          <span v-if="menu.tags?.length > 3" class="tag-more">
-            +{{ menu.tags.length - 3 }}
+          <span v-if="menu.tagIds?.length > 3" class="tag-more">
+            +{{ menu.tagIds.length - 3 }}
           </span>
         </div>
       </div>
@@ -71,11 +71,11 @@
           <p class="menu-description">{{ menu.description || 'トレーニングメニューの説明' }}</p>
           <div class="menu-tags">
             <span 
-              v-for="tag in menu.tags"
-              :key="tag.tagId"
+              v-for="tagId in menu.tagIds"
+              :key="tagId"
               class="tag"
             >
-              {{ tag.tagId }}
+              {{ tagId }}
             </span>
           </div>
         </div>
@@ -151,8 +151,8 @@ function toggleFavorite() {
 }
 
 function getPrimaryCategory() {
-  if (!props.menu.tags?.length) return 'その他'
-  return props.menu.tags[0].tagId
+  if (!props.menu.tagIds?.length) return 'その他'
+  return props.menu.tagIds[0]
 }
 
 function getCategoryIcon() {

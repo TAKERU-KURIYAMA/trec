@@ -16,8 +16,8 @@ FROM nginx:alpine
 
 COPY --from=build /app/.output/public /usr/share/nginx/html
 
-# Nginx config をカスタムで差し替えたい場合（任意）
-# COPY nginx.conf /etc/nginx/conf.d/default.conf
+# カスタムNginx設定をコピー（SPAルーティング対応）
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 EXPOSE 5001

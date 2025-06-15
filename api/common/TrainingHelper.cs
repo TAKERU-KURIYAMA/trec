@@ -1,7 +1,5 @@
 using Api.Models;
-using Common.Shared.Constants;
-using Common.Shared.Exceptions;
-using Common.Shared.Utilities;
+using Api.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace Api.Common

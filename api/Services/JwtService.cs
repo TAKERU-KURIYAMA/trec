@@ -1,9 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.Extensions.Logging;
-using Common.Shared.Constants;
-using Common.Shared.Exceptions;
-using Common.Shared.Utilities;
+using Api.Common;
 
 namespace Services;
 
@@ -155,7 +153,7 @@ public class JwtService : IJwtService
         catch (AppException ex)
         {
             // 認証エラーは想定内なので、Warningレベルでログ出力
-            _logger.LogWarning("Token validation failed: {ErrorMessage}", ex.ErrorInfo.Message);
+            _logger.LogWarning("Token validation failed: {ErrorMessage}", ex.UserMessage);
             return (false, null);
         }
         catch (Exception ex)

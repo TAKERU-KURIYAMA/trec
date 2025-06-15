@@ -3,7 +3,7 @@
 // Comprehensive state management, error handling, filtering, and caching
 // ===================================
 
-import { ref, computed, reactive, watch, onMounted, nextTick } from 'vue'
+import { ref, computed, reactive, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import type { 
   TrainingMenu, 
   TrainingTag, 
@@ -377,20 +377,24 @@ export function useTrainingMenus(options: {
 
   // 自動更新の設定
   let autoRefreshTimer: NodeJS.Timeout | null = null
-  if (autoRefreshInterval > 0) {
-    autoRefreshTimer = setInterval(() => {
-      if (!loading.isLoading) {
-        fetchMenus({ useCache: false }).catch(err => {
-          console.warn('[useTrainingMenus] Auto refresh failed:', err)
-        })
-      }
-    }, autoRefreshInterval)
-  }
-
+  
   // コンポーネント破棄時のクリーンアップ
   onUnmounted(() => {
     if (autoRefreshTimer) {
       clearInterval(autoRefreshTimer)
+    }
+  })
+
+  // マウント時に自動更新を設定（クライアントサイドのみ）
+  onMounted(() => {
+    if (autoRefreshInterval > 0 && process.client) {
+      autoRefreshTimer = setInterval(() => {
+        if (!loading.isLoading) {
+          fetchMenus({ useCache: false }).catch(err => {
+            console.warn('[useTrainingMenus] Auto refresh failed:', err)
+          })
+        }
+      }, autoRefreshInterval)
     }
   })
 

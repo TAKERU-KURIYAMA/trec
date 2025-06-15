@@ -1,9 +1,7 @@
 using Api.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Common.Shared.Constants;
-using Common.Shared.Exceptions;
-using Common.Shared.Utilities;
+using Api.Common;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -35,14 +33,14 @@ public class AuthService : IAuthService
     /// </summary>
     /// <param name="userCommonId">ユーザー共通ID（システム内部用）</param>
     /// <param name="loginId">ログインID（ユーザー入力）</param>
-    /// <param name="plainPassword">平文パスワード</param>
+    /// <param name="clientHashedPassword">フロントエンドでSHA256済みのパスワードハッシュ</param>
     /// <param name="displayName">表示名</param>
     /// <returns>登録されたユーザー情報</returns>
     /// <exception cref="AppException">登録に失敗した場合</exception>
-    public async Task<User> RegisterUserAsync(string userCommonId, string loginId, string plainPassword, string displayName)
+    public async Task<User> RegisterUserAsync(string userCommonId, string loginId, string clientHashedPassword, string displayName)
     {
         // 入力値検証
-        ValidateUserRegistrationInput(userCommonId, loginId, plainPassword, displayName);
+        ValidateUserRegistrationInput(userCommonId, loginId, clientHashedPassword, displayName);
 
         try
         {
@@ -54,11 +52,11 @@ public class AuthService : IAuthService
             if (existingUser != null)
             {
                 _logger.LogWarning("ユーザー登録失敗：ログインIDが重複 - LoginId: {LoginId}", loginId);
-                throw new AppException(ApplicationConstants.ErrorCodes.LoginIdDuplicate);
+                throw new AppException(ApplicationConstants.ErrorCodes.LoginIdDuplicate, "このログインIDは既に使用されています");
             }
 
             // セキュアなパスワードハッシュ化
-            var (passwordHash, passwordSalt) = HashPassword(plainPassword);
+            var (passwordHash, passwordSalt) = HashPassword(clientHashedPassword);
 
             // ユーザーエンティティを作成
             var user = new User
@@ -80,8 +78,8 @@ public class AuthService : IAuthService
                 userCommonId, loginId, displayName);
 
             // ビジネスイベントログ
-            StructuredLogger.LogBusinessEvent(_logger, "UserRegistered", 
-                new { userCommonId, loginId, displayName }, userCommonId);
+            StructuredLogger.LogBusinessEvent("UserRegistered", 
+                new { userCommonId, loginId, displayName });
 
             return user;
         }
@@ -112,9 +110,9 @@ public class AuthService : IAuthService
     /// ログインIDとパスワードを検証し、認証に成功した場合はユーザー情報を返す
     /// </summary>
     /// <param name="loginId">ログインID</param>
-    /// <param name="plainPassword">平文パスワード</param>
+    /// <param name="clientHashedPassword">フロントエンドでSHA256済みのパスワードハッシュ</param>
     /// <returns>認証成功時はユーザー情報、失敗時はnull</returns>
-    public async Task<User?> AuthenticateUserAsync(string loginId, string plainPassword)
+    public async Task<User?> AuthenticateUserAsync(string loginId, string clientHashedPassword)
     {
         // 入力値検証
         if (string.IsNullOrWhiteSpace(loginId))
@@ -122,7 +120,7 @@ public class AuthService : IAuthService
             throw new AppException(ApplicationConstants.ErrorCodes.ParameterError, "ログインIDが指定されていません");
         }
 
-        if (string.IsNullOrWhiteSpace(plainPassword))
+        if (string.IsNullOrWhiteSpace(clientHashedPassword))
         {
             throw new AppException(ApplicationConstants.ErrorCodes.ParameterError, "パスワードが指定されていません");
         }
@@ -141,7 +139,7 @@ public class AuthService : IAuthService
             }
 
             // パスワード検証
-            if (!VerifyPassword(plainPassword, user.PasswordHash, user.PasswordSalt))
+            if (!VerifyPassword(clientHashedPassword, user.PasswordHash, user.PasswordSalt))
             {
                 _logger.LogWarning("ログイン失敗：パスワード不一致 - LoginId: {LoginId}", loginId);
                 return null;
@@ -152,8 +150,8 @@ public class AuthService : IAuthService
                 user.UserCommonId, loginId);
 
             // ビジネスイベントログ
-            StructuredLogger.LogBusinessEvent(_logger, "UserLoggedIn", 
-                new { loginId }, user.UserCommonId);
+            StructuredLogger.LogBusinessEvent("UserLoggedIn", 
+                new { loginId });
 
             return user;
         }
@@ -204,10 +202,10 @@ public class AuthService : IAuthService
     /// </summary>
     /// <param name="userCommonId">ユーザー共通ID</param>
     /// <param name="loginId">ログインID</param>
-    /// <param name="plainPassword">平文パスワード</param>
+    /// <param name="clientHashedPassword">フロントエンドでSHA256済みのパスワードハッシュ</param>
     /// <param name="displayName">表示名</param>
     /// <exception cref="AppException">検証に失敗した場合</exception>
-    private static void ValidateUserRegistrationInput(string userCommonId, string loginId, string plainPassword, string displayName)
+    private static void ValidateUserRegistrationInput(string userCommonId, string loginId, string clientHashedPassword, string displayName)
     {
         if (string.IsNullOrWhiteSpace(userCommonId))
         {
@@ -219,7 +217,7 @@ public class AuthService : IAuthService
             throw new AppException(ApplicationConstants.ErrorCodes.ParameterError, "ログインIDが指定されていません");
         }
 
-        if (string.IsNullOrWhiteSpace(plainPassword))
+        if (string.IsNullOrWhiteSpace(clientHashedPassword))
         {
             throw new AppException(ApplicationConstants.ErrorCodes.ParameterError, "パスワードが指定されていません");
         }
@@ -240,14 +238,9 @@ public class AuthService : IAuthService
             throw new AppException(ApplicationConstants.ErrorCodes.ParameterError, "表示名は64文字以下で入力してください");
         }
 
-        if (plainPassword.Length < 8)
+        if (clientHashedPassword.Length != 64)
         {
-            throw new AppException(ApplicationConstants.ErrorCodes.ParameterError, "パスワードは8文字以上で入力してください");
-        }
-
-        if (plainPassword.Length > 128)
-        {
-            throw new AppException(ApplicationConstants.ErrorCodes.ParameterError, "パスワードは128文字以下で入力してください");
+            throw new AppException(ApplicationConstants.ErrorCodes.ParameterError, "パスワードハッシュの形式が正しくありません");
         }
 
         // 形式チェック（正規表現使用）
@@ -259,45 +252,53 @@ public class AuthService : IAuthService
 
     /// <summary>
     /// セキュアなパスワードハッシュ化
-    /// PBKDF2を使用してソルト付きハッシュを生成
+    /// フロントエンドでSHA256済みのハッシュ値を受け取り、サーバー側でソルト付きSHA256を実行
     /// </summary>
-    /// <param name="plainPassword">平文パスワード</param>
+    /// <param name="clientHashedPassword">フロントエンドでSHA256済みのパスワードハッシュ</param>
     /// <returns>ハッシュ化されたパスワードとソルトのタプル</returns>
-    private static (string Hash, string Salt) HashPassword(string plainPassword)
+    private static (string Hash, string Salt) HashPassword(string clientHashedPassword)
     {
-        // ランダムソルトを生成（128ビット）
-        var saltBytes = new byte[16];
+        // ランダムソルトを生成（256ビット）
+        var saltBytes = new byte[32];
         using (var rng = RandomNumberGenerator.Create())
         {
             rng.GetBytes(saltBytes);
         }
-        var salt = Convert.ToBase64String(saltBytes);
+        
+        // ソルトを文字列として扱い、その後Base64エンコード
+        var saltString = Convert.ToBase64String(saltBytes);
+        var saltForStorage = Convert.ToBase64String(Encoding.UTF8.GetBytes(saltString));
 
-        // PBKDF2でハッシュ化（反復回数は現在のセキュリティ標準に準拠）
-        using var pbkdf2 = new Rfc2898DeriveBytes(plainPassword, saltBytes, 310000, HashAlgorithmName.SHA256);
-        var hashBytes = pbkdf2.GetBytes(32); // 256ビットハッシュ
+        // クライアント側のハッシュ値 + ソルト文字列をSHA256でハッシュ化
+        var combinedBytes = Encoding.UTF8.GetBytes(clientHashedPassword + saltString);
+        using var sha256 = SHA256.Create();
+        var hashBytes = sha256.ComputeHash(combinedBytes);
         var hash = Convert.ToBase64String(hashBytes);
 
-        return (hash, salt);
+        return (hash, saltForStorage);
     }
 
     /// <summary>
     /// パスワードの検証
-    /// 入力されたパスワードが保存されたハッシュと一致するかを確認
+    /// フロントエンドでSHA256済みのハッシュ値が保存されたハッシュと一致するかを確認
     /// </summary>
-    /// <param name="plainPassword">平文パスワード</param>
+    /// <param name="clientHashedPassword">フロントエンドでSHA256済みのパスワードハッシュ</param>
     /// <param name="storedHash">保存されたハッシュ</param>
     /// <param name="storedSalt">保存されたソルト</param>
     /// <returns>パスワードが一致する場合はtrue</returns>
-    private static bool VerifyPassword(string plainPassword, string storedHash, string storedSalt)
+    private static bool VerifyPassword(string clientHashedPassword, string storedHash, string storedSalt)
     {
         try
         {
+            // Base64エンコードされたソルトをデコード
             var saltBytes = Convert.FromBase64String(storedSalt);
+            var decodedSalt = Encoding.UTF8.GetString(saltBytes);
             
-            using var pbkdf2 = new Rfc2898DeriveBytes(plainPassword, saltBytes, 310000, HashAlgorithmName.SHA256);
-            var computedHashBytes = pbkdf2.GetBytes(32);
-            var computedHash = Convert.ToBase64String(computedHashBytes);
+            // クライアント側のハッシュ値 + デコードされたソルトをSHA256でハッシュ化
+            var combinedBytes = Encoding.UTF8.GetBytes(clientHashedPassword + decodedSalt);
+            using var sha256 = SHA256.Create();
+            var hashBytes = sha256.ComputeHash(combinedBytes);
+            var computedHash = Convert.ToBase64String(hashBytes);
 
             // タイミング攻撃を防ぐための定数時間比較
             return CryptographicOperations.FixedTimeEquals(

@@ -1,9 +1,7 @@
 
 using Microsoft.AspNetCore.Mvc;
 using System.Dynamic;
-using Common.Shared.Constants;
-using Common.Shared.Exceptions;
-using Common.Shared.Utilities;
+using Api.Common;
 
 namespace API.Controllers
 {
@@ -28,7 +26,7 @@ namespace API.Controllers
         {
             try
             {
-                StructuredLogger.LogRequestStart(_logger, Request, nameof(GetVersion));
+                StructuredLogger.LogRequestStart(Request.Method, Request.Path.ToString(), nameof(GetVersion));
 
                 var responseData = new
                 {
@@ -37,19 +35,19 @@ namespace API.Controllers
                     timestamp = DateTimeHelper.GetJstNow()
                 };
 
-                StructuredLogger.LogRequestEnd(_logger, Request, 200, responseData, null, nameof(GetVersion));
+                StructuredLogger.LogRequestEnd(Request.Method, Request.Path.ToString(), 200, TimeSpan.Zero, responseData);
                 return HttpResponseHelper.CreateSuccessResponse(responseData);
             }
             catch (AppException aex)
             {
-                StructuredLogger.LogError(_logger, aex, Request);
-                return HttpResponseHelper.CreateErrorResponse(aex);
+                StructuredLogger.LogError($"Error in {nameof(GetVersion)}: {aex.UserMessage}", aex, Request.Path.ToString());
+                return HttpResponseHelper.CreateErrorResponse(aex.ErrorCode, aex.UserMessage);
             }
             catch (Exception ex)
             {
-                var appEx = new AppException(ApplicationConstants.ErrorCodes.ServerError, ex);
-                StructuredLogger.LogError(_logger, appEx, Request);
-                return HttpResponseHelper.CreateErrorResponse(ApplicationConstants.ErrorCodes.ServerError);
+                var appEx = new AppException(ApplicationConstants.ErrorCodes.ServerError, "システムエラーが発生しました", ex);
+                StructuredLogger.LogError($"Unhandled error in {nameof(GetVersion)}: {ex.Message}", ex, Request.Path.ToString());
+                return HttpResponseHelper.CreateErrorResponse(ApplicationConstants.ErrorCodes.ServerError, "システムエラーが発生しました");
             }
         }
     }

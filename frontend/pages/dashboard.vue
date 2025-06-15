@@ -1,59 +1,192 @@
 <template>
   <div class="dashboard">
-    <header class="dashboard-header">
-      <h1>🏋️ トレーニングダッシュボード</h1>
-      <div class="header-stats">
-        <div class="stat-card">
-          <span class="stat-number">{{ totalWorkouts }}</span>
-          <span class="stat-label">総ワークアウト数</span>
+    <!-- ログイン済みユーザー向けダッシュボード -->
+    <div v-if="authStore.isAuthenticated">
+      <header class="dashboard-header">
+        <div class="header-top">
+          <h1>🏋️ トレーニングダッシュボード</h1>
+          <div class="header-actions">
+            <span v-if="authStore.user" class="welcome-text">{{ authStore.user.displayName }}さん</span>
+            <button @click="authStore.logout" class="logout-btn">ログアウト</button>
+          </div>
         </div>
-        <div class="stat-card">
-          <span class="stat-number">{{ currentStreak }}</span>
-          <span class="stat-label">連続日数</span>
+        <div class="header-stats">
+          <div class="stat-card">
+            <span class="stat-number">{{ totalWorkouts }}</span>
+            <span class="stat-label">総ワークアウト数</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-number">{{ currentStreak }}</span>
+            <span class="stat-label">連続日数</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-number">{{ weeklyProgress }}%</span>
+            <span class="stat-label">週間達成率</span>
+          </div>
         </div>
-        <div class="stat-card">
-          <span class="stat-number">{{ weeklyProgress }}%</span>
-          <span class="stat-label">週間達成率</span>
-        </div>
+      </header>
+
+      <div class="dashboard-grid">
+        <!-- Progress Chart Section -->
+        <section class="chart-section">
+          <h2>📊 プログレス分析</h2>
+          <ProgressChart :data="progressData" />
+        </section>
+
+        <!-- Recent Activities -->
+        <section class="activities-section">
+          <h2>🚀 最近のアクティビティ</h2>
+          <RecentActivities :activities="recentActivities" />
+        </section>
+
+        <!-- Achievement System -->
+        <section class="achievements-section">
+          <h2>🏆 アチーブメント</h2>
+          <AchievementBadges :achievements="achievements" />
+        </section>
+
+        <!-- Personal Records -->
+        <section class="records-section">
+          <h2>⭐ パーソナルレコード</h2>
+          <PersonalRecords :records="personalRecords" />
+        </section>
+
+        <!-- Weekly Calendar -->
+        <section class="calendar-section">
+          <h2>📅 トレーニングカレンダー</h2>
+          <TrainingCalendar :training-data="trainingCalendarData" />
+        </section>
+
+        <!-- Smart Recommendations -->
+        <section class="recommendations-section">
+          <h2>🧠 スマート推奨</h2>
+          <SmartRecommendations :recommendations="smartRecommendations" />
+        </section>
       </div>
-    </header>
+    </div>
 
-    <div class="dashboard-grid">
-      <!-- Progress Chart Section -->
-      <section class="chart-section">
-        <h2>📊 プログレス分析</h2>
-        <ProgressChart :data="progressData" />
-      </section>
+    <!-- 未ログインユーザー向けデモダッシュボード -->
+    <div v-else>
+      <header class="demo-dashboard-header">
+        <div class="header-top">
+          <h1>🏋️ TrecPlans ダッシュボード</h1>
+          <div class="header-actions">
+            <button @click="openLoginModal" class="login-btn">ログイン</button>
+            <button @click="openRegisterModal" class="register-btn">新規登録</button>
+          </div>
+        </div>
+        <div class="demo-banner">
+          <div class="demo-content">
+            <h2>🌟 TrecPlansにようこそ！</h2>
+            <p>ログインして、あなた専用のダッシュボードでトレーニング進捗を詳しく確認しましょう</p>
+            <button @click="openLoginModal" class="cta-login-btn">
+              <Icon name="mdi:login" size="20" />
+              <span>ログインして始める</span>
+            </button>
+          </div>
+        </div>
+        <div class="header-stats">
+          <div class="stat-card demo">
+            <span class="stat-number">{{ demoStats.totalWorkouts }}</span>
+            <span class="stat-label">利用可能メニュー</span>
+          </div>
+          <div class="stat-card demo">
+            <span class="stat-number">{{ demoStats.activeUsers }}</span>
+            <span class="stat-label">アクティブユーザー</span>
+          </div>
+          <div class="stat-card demo">
+            <span class="stat-number">{{ demoStats.completedGoals }}%</span>
+            <span class="stat-label">目標達成率</span>
+          </div>
+        </div>
+      </header>
 
-      <!-- Recent Activities -->
-      <section class="activities-section">
-        <h2>🚀 最近のアクティビティ</h2>
-        <RecentActivities :activities="recentActivities" />
-      </section>
+      <div class="dashboard-grid">
+        <!-- デモ機能紹介セクション -->
+        <section class="demo-features-section">
+          <h2>✨ 主な機能</h2>
+          <div class="features-grid">
+            <div class="feature-card">
+              <div class="feature-icon">📊</div>
+              <h3>詳細な進捗分析</h3>
+              <p>トレーニングデータを視覚的に分析し、パフォーマンスの向上を確認できます</p>
+            </div>
+            <div class="feature-card">
+              <div class="feature-icon">🎯</div>
+              <h3>パーソナライズされた目標</h3>
+              <p>あなたの目標に合わせたカスタムトレーニングプランを作成できます</p>
+            </div>
+            <div class="feature-card">
+              <div class="feature-icon">📅</div>
+              <h3>スマートなスケジュール</h3>
+              <p>効率的なトレーニングスケジュールを自動で提案します</p>
+            </div>
+            <div class="feature-card">
+              <div class="feature-icon">🏆</div>
+              <h3>アチーブメント</h3>
+              <p>目標達成でバッジを獲得し、モチベーションを維持できます</p>
+            </div>
+          </div>
+        </section>
 
-      <!-- Achievement System -->
-      <section class="achievements-section">
-        <h2>🏆 アチーブメント</h2>
-        <AchievementBadges :achievements="achievements" />
-      </section>
+        <!-- デモチャート -->
+        <section class="demo-chart-section">
+          <h2>📈 プログレス例</h2>
+          <div class="demo-chart">
+            <div class="chart-placeholder">
+              <div class="chart-bars">
+                <div class="bar" style="height: 60%"></div>
+                <div class="bar" style="height: 75%"></div>
+                <div class="bar" style="height: 45%"></div>
+                <div class="bar" style="height: 90%"></div>
+                <div class="bar" style="height: 80%"></div>
+                <div class="bar" style="height: 95%"></div>
+                <div class="bar" style="height: 85%"></div>
+              </div>
+              <p class="chart-description">過去7日間のトレーニング強度の例</p>
+            </div>
+          </div>
+        </section>
 
-      <!-- Personal Records -->
-      <section class="records-section">
-        <h2>⭐ パーソナルレコード</h2>
-        <PersonalRecords :records="personalRecords" />
-      </section>
+        <!-- クイックスタート -->
+        <section class="quick-start-section">
+          <h2>🚀 今すぐ始める</h2>
+          <div class="quick-start-grid">
+            <NuxtLink to="/" class="quick-start-card">
+              <div class="start-icon">💪</div>
+              <h3>トレーニングメニューを見る</h3>
+              <p>豊富なメニューから選択してトレーニングを開始</p>
+            </NuxtLink>
+            <button @click="openRegisterModal" class="quick-start-card">
+              <div class="start-icon">✨</div>
+              <h3>無料で始める</h3>
+              <p>今すぐアカウントを作成して全機能を利用</p>
+            </button>
+          </div>
+        </section>
 
-      <!-- Weekly Calendar -->
-      <section class="calendar-section">
-        <h2>📅 トレーニングカレンダー</h2>
-        <TrainingCalendar :training-data="trainingCalendarData" />
-      </section>
-
-      <!-- Smart Recommendations -->
-      <section class="recommendations-section">
-        <h2>🧠 スマート推奨</h2>
-        <SmartRecommendations :recommendations="smartRecommendations" />
-      </section>
+        <!-- 推奨メニュー -->
+        <section class="demo-recommendations-section">
+          <h2>🔥 人気のトレーニング</h2>
+          <div class="recommendations-grid">
+            <div class="recommendation-card">
+              <div class="rec-icon">💪</div>
+              <h4>初心者向け全身トレーニング</h4>
+              <p>基本的な動作で全身をバランスよく鍛える</p>
+            </div>
+            <div class="recommendation-card">
+              <div class="rec-icon">🏋️</div>
+              <h4>上半身集中ワークアウト</h4>
+              <p>胸、背中、腕を効率的に強化</p>
+            </div>
+            <div class="recommendation-card">
+              <div class="rec-icon">🦵</div>
+              <h4>下半身パワーアップ</h4>
+              <p>脚とお尻の筋力向上にフォーカス</p>
+            </div>
+          </div>
+        </section>
+      </div>
     </div>
   </div>
 </template>
@@ -65,9 +198,15 @@ import RecentActivities from '~/components/dashboard/RecentActivities.vue'
 import AchievementBadges from '~/components/dashboard/AchievementBadges.vue'
 import PersonalRecords from '~/components/dashboard/PersonalRecords.vue'
 import TrainingCalendar from '~/components/dashboard/TrainingCalendar.vue'
+
+// 認証ミドルウェアを削除（ログイン前でもアクセス可能にする）
+
 import SmartRecommendations from '~/components/dashboard/SmartRecommendations.vue'
 
-// Reactive data
+const authStore = useAuthStore()
+const { openLogin, openRegister } = globalAuthModal
+
+// 認証済みユーザー用データ
 const totalWorkouts = ref(0)
 const currentStreak = ref(0)
 const weeklyProgress = ref(0)
@@ -78,9 +217,27 @@ const personalRecords = ref([])
 const trainingCalendarData = ref([])
 const smartRecommendations = ref([])
 
+// デモ用統計データ
+const demoStats = ref({
+  totalWorkouts: 150,
+  activeUsers: '2.5k',
+  completedGoals: 85
+})
+
+// モーダル制御
+function openLoginModal() {
+  openLogin()
+}
+
+function openRegisterModal() {
+  openRegister()
+}
+
 // Load dashboard data
 onMounted(async () => {
-  await loadDashboardData()
+  if (authStore.isAuthenticated) {
+    await loadDashboardData()
+  }
 })
 
 async function loadDashboardData() {
@@ -172,9 +329,14 @@ async function loadSmartRecommendations() {
 
 // Page metadata
 useHead({
-  title: 'ダッシュボード - トレーニング記録',
+  title: 'ダッシュボード',
   meta: [
-    { name: 'description', content: 'あなたのトレーニング進捗を一目で確認' }
+    { name: 'description', content: 'TrecPlansダッシュボードであなたのトレーニング進捗を一目で確認。詳細な分析とパーソナライズされた推奨で効率的なフィットネス管理を実現します。' },
+    { name: 'keywords', content: 'ダッシュボード,トレーニング進捗,統計,分析,TrecPlans' },
+    { property: 'og:title', content: 'ダッシュボード - TrecPlans' },
+    { property: 'og:description', content: 'あなたのトレーニング進捗を一目で確認できるダッシュボード' },
+    { name: 'twitter:title', content: 'ダッシュボード - TrecPlans' },
+    { name: 'twitter:description', content: 'あなたのトレーニング進捗を一目で確認できるダッシュボード' }
   ]
 })
 </script>
@@ -187,14 +349,52 @@ useHead({
 }
 
 .dashboard-header {
-  text-align: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 30px;
+  border-radius: 12px;
   margin-bottom: 30px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.welcome-text {
+  font-size: 16px;
+  opacity: 0.9;
+}
+
+.logout-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+.logout-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 .dashboard-header h1 {
   font-size: 2.5rem;
-  color: #2c3e50;
-  margin-bottom: 20px;
+  color: white;
+  margin: 0;
 }
 
 .header-stats {

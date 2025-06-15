@@ -130,12 +130,18 @@ export interface DashboardStats {
   totalWorkouts: number
   currentStreak: number
   longestStreak: number
+  bestStreak?: number
   totalVolume: number
   totalDuration: number
   favoriteExercise: string
   
+  // トレンド情報
+  workoutTrend?: string
+  volumeTrend?: string
+  
   // 期間別統計
   weeklyProgress: WeeklyProgress[]
+  weeklyVolume: Array<{ date: string; volume: number; workoutCount: number }>
   monthlyProgress: MonthlyProgress[]
   yearlyProgress: YearlyProgress[]
   
@@ -146,10 +152,15 @@ export interface DashboardStats {
   
   // 目標達成状況
   goals: Goal[]
+  activeGoals: Goal[]
   achievements: Achievement[]
+  recentAchievements: Achievement[]
+  
+  // 最終ワークアウト情報
+  lastWorkoutDate?: string
+  lastSyncAt?: string
   
   // React Native specific
-  lastSyncAt?: Date
   offlineRecordsCount?: number
 }
 
@@ -231,6 +242,7 @@ export interface Goal {
   currentValue: number
   unit: string
   deadline?: Date
+  targetDate: string
   menuId?: string
   status: 'active' | 'completed' | 'paused' | 'failed'
   progress: number // 0-1
@@ -242,6 +254,7 @@ export interface Goal {
  * 実績・達成
  */
 export interface Achievement {
+  id: string
   achievementId: string
   title: string
   description: string

@@ -13,18 +13,18 @@ public interface IAuthService
     /// </summary>
     /// <param name="userCommonId">ユーザー共通ID（システム内部用）</param>
     /// <param name="loginId">ログインID（ユーザー入力）</param>
-    /// <param name="plainPassword">平文パスワード</param>
+    /// <param name="clientHashedPassword">フロントエンドでSHA256済みのパスワードハッシュ</param>
     /// <param name="displayName">表示名</param>
     /// <returns>登録されたユーザー情報</returns>
-    Task<User> RegisterUserAsync(string userCommonId, string loginId, string plainPassword, string displayName);
+    Task<User> RegisterUserAsync(string userCommonId, string loginId, string clientHashedPassword, string displayName);
 
     /// <summary>
     /// ログイン認証を実行
     /// </summary>
     /// <param name="loginId">ログインID</param>
-    /// <param name="plainPassword">平文パスワード</param>
+    /// <param name="clientHashedPassword">フロントエンドでSHA256済みのパスワードハッシュ</param>
     /// <returns>認証成功時はユーザー情報、失敗時はnull</returns>
-    Task<User?> AuthenticateUserAsync(string loginId, string plainPassword);
+    Task<User?> AuthenticateUserAsync(string loginId, string clientHashedPassword);
 
     /// <summary>
     /// ユーザー共通IDの生成

@@ -392,13 +392,13 @@ export function useNotifications(config: Partial<NotificationConfig> = {}) {
   /**
    * APIエラーを通知として表示
    */
-  function fromApiError(error: any): string {
-    if (error?.userMessage) {
-      return this.error('エラー', error.userMessage)
-    } else if (error?.message) {
-      return this.error('エラー', error.message)
+  function fromApiError(errorObj: any): string {
+    if (errorObj?.userMessage) {
+      return error('エラー', errorObj.userMessage)
+    } else if (errorObj?.message) {
+      return error('エラー', errorObj.message)
     } else {
-      return this.error('エラー', '予期しないエラーが発生しました')
+      return error('エラー', '予期しないエラーが発生しました')
     }
   }
 

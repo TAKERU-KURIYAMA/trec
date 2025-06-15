@@ -3,24 +3,32 @@
 // ===================================
 
 /**
- * API共通レスポンス型
+ * API共通レスポンス型（新形式）
  * 全てのAPIレスポンスで使用される基本構造
  */
-export interface ApiResponse<T = any> {
-  /** レスポンスコード (00000 = 成功) */
-  code: string
-  /** メッセージ */
-  message: string
+export interface ApiResponse<T> {
+  /** 成功フラグ */
+  isSuccess: boolean
   /** 実際のデータ */
-  result?: T
+  data: T
+  /** ユーザー向けメッセージ */
+  userMessage: string
+  /** エラーコード (nullの場合は成功) */
+  errorCode: string | null
+  /** 開発者向けメッセージ */
+  developerMessage: string | null
+  /** タイムスタンプ */
+  timestamp: string
 }
 
 /**
  * APIエラーレスポンス型
  */
 export interface ApiErrorResponse {
-  code: string
-  message: string
+  isSuccess: false
+  errorCode: string
+  userMessage: string
+  developerMessage?: string
   validationErrors?: Record<string, string[]>
   debug?: {
     internalCode?: string

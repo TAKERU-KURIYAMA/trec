@@ -78,16 +78,23 @@
         </h2>
         <div class="view-options">
           <button 
-            @click="viewMode = 'grid'"
+            @click="displayMode = 'category'"
             class="view-btn"
-            :class="{ active: viewMode === 'grid' }"
+            :class="{ active: displayMode === 'category' }"
+          >
+            🎯 部位別
+          </button>
+          <button 
+            @click="displayMode = 'grid'"
+            class="view-btn"
+            :class="{ active: displayMode === 'grid' }"
           >
             ⊞ グリッド
           </button>
           <button 
-            @click="viewMode = 'list'"
+            @click="displayMode = 'list'"
             class="view-btn"
-            :class="{ active: viewMode === 'list' }"
+            :class="{ active: displayMode === 'list' }"
           >
             ☰ リスト
           </button>
@@ -114,12 +121,54 @@
         <button @click="resetFilters" class="btn btn-primary">フィルターをリセット</button>
       </div>
 
-      <div v-else class="menu-grid" :class="`view-${viewMode}`">
+      <!-- Body Part Categories Display -->
+      <div v-else-if="displayMode === 'category'" class="body-part-categories">
+        <div
+          v-for="category in bodyPartCategories"
+          :key="category.id"
+          class="body-part-section"
+          v-show="category.menus.length > 0"
+        >
+          <div class="category-header">
+            <div class="category-icon">{{ category.icon }}</div>
+            <div class="category-info">
+              <h3 class="category-title">{{ category.name }}</h3>
+              <p class="category-description">{{ category.description }}</p>
+              <span class="menu-count">{{ category.menus.length }}種目</span>
+            </div>
+            <button 
+              @click="toggleCategoryExpansion(category.id)"
+              class="category-toggle"
+              :class="{ expanded: expandedCategories.has(category.id) }"
+            >
+              <Icon name="mdi:chevron-down" />
+            </button>
+          </div>
+          
+          <div 
+            v-show="expandedCategories.has(category.id)"
+            class="category-menus"
+            :class="`view-${viewMode}`"
+          >
+            <EnhancedTrainingCard
+              v-for="menu in category.menus"
+              :key="menu.menuId"
+              :menu="menu"
+              :view-mode="viewMode"
+              @click="goToMenu(menu.menuId)"
+              @favorite="toggleFavorite(menu)"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Traditional Grid/List Display -->
+      <div v-else class="menu-grid" :class="`view-${displayMode}`">
         <EnhancedTrainingCard
           v-for="menu in filteredMenus"
           :key="menu.menuId"
           :menu="menu"
-          :view-mode="viewMode"
+          :view-mode="displayMode"
           @click="goToMenu(menu.menuId)"
           @favorite="toggleFavorite(menu)"
         />
@@ -162,11 +211,15 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useTrainingMenus } from '~/composables/useTrainingMenus'
 import { useGlobalNotifications } from '~/composables/useNotifications'
+import { useAuthStore } from '~/stores/auth'
+import { globalAuthModal } from '~/composables/useAuthModal'
 import EnhancedTrainingCard from '~/components/EnhancedTrainingCard.vue'
 import type { TrainingMenu } from '~/types'
 
 const router = useRouter()
 const notifications = useGlobalNotifications()
+const authStore = useAuthStore()
+const { openLogin } = globalAuthModal
 
 // Ultra-refactored menu management with advanced features
 const {
@@ -183,7 +236,8 @@ const {
   toggleTagFilter,
   clearFilters: clearAllFilters,
   setSortOrder,
-  retry
+  retry,
+  getTagById
 } = useTrainingMenus({
   autoLoad: true,
   autoRefreshInterval: 5 * 60 * 1000, // 5分間隔で自動更新
@@ -195,9 +249,11 @@ const {
 
 // UI state
 const viewMode = ref<'grid' | 'list'>('grid')
+const displayMode = ref<'category' | 'grid' | 'list'>('category')
 const favorites = ref(new Set<string>())
 const searchQuery = ref('')
 const selectedTag = ref('')
+const expandedCategories = ref(new Set<string>())
 
 // ===================================
 // Computed Properties
@@ -221,6 +277,95 @@ const filteredMenus = computed(() => {
     ...menu,
     isFavorite: favorites.value.has(menu.menuId)
   }))
+})
+
+// 部位別カテゴリー定義
+const bodyPartDefinitions = computed(() => [
+  {
+    id: 'chest',
+    name: '胸部',
+    icon: '💪',
+    description: '大胸筋を中心とした上半身前面のトレーニング',
+    tagIds: ['chest'],
+    priority: 1
+  },
+  {
+    id: 'back',
+    name: '背中',
+    icon: '🏋️',
+    description: '広背筋・僧帽筋などの背面筋群のトレーニング',
+    tagIds: ['back'],
+    priority: 2
+  },
+  {
+    id: 'shoulders',
+    name: '肩',
+    icon: '🤲',
+    description: '三角筋・ローテーターカフのトレーニング',
+    tagIds: ['shoulders'],
+    priority: 3
+  },
+  {
+    id: 'arms',
+    name: '腕',
+    icon: '💪',
+    description: '上腕二頭筋・三頭筋・前腕のトレーニング',
+    tagIds: ['arms'],
+    priority: 4
+  },
+  {
+    id: 'core',
+    name: 'コア・腹筋',
+    icon: '🎯',
+    description: '体幹・腹筋群の安定性とパワーのトレーニング',
+    tagIds: ['core', 'abs'],
+    priority: 5
+  },
+  {
+    id: 'legs',
+    name: '脚・下半身',
+    icon: '🦵',
+    description: '大腿四頭筋・ハムストリング・大臀筋のトレーニング',
+    tagIds: ['legs', 'glutes'],
+    priority: 6
+  },
+  {
+    id: 'cardio',
+    name: '有酸素・全身',
+    icon: '🫀',
+    description: '心肺機能向上と全身持久力のトレーニング',
+    tagIds: ['cardio', 'endurance'],
+    priority: 7
+  },
+  {
+    id: 'functional',
+    name: '機能的・複合',
+    icon: '⚡',
+    description: '複数の筋群を使った機能的なトレーニング',
+    tagIds: ['functional', 'compound'],
+    priority: 8
+  }
+])
+
+// 部位別にメニューを分類
+const bodyPartCategories = computed(() => {
+  return bodyPartDefinitions.value.map(category => {
+    const categoryMenus = filteredMenus.value.filter(menu => {
+      // メニューのタグIDと部位のタグIDが一致するかチェック
+      return menu.tagIds.some(tagId => 
+        category.tagIds.some(categoryTagId => 
+          tagId === categoryTagId || 
+          getTagById(tagId)?.jpName?.toLowerCase().includes(categoryTagId.toLowerCase()) ||
+          getTagById(tagId)?.enName?.toLowerCase().includes(categoryTagId.toLowerCase())
+        )
+      )
+    })
+
+    return {
+      ...category,
+      menus: categoryMenus
+    }
+  }).filter(category => category.menus.length > 0)
 })
 
 // ===================================
@@ -302,6 +447,9 @@ onMounted(() => {
     }
   }
 
+  // デフォルトで全カテゴリーを展開
+  expandAllCategories()
+
   // Success notification when menus are loaded
   watch(() => stats.value.totalMenus, (count) => {
     if (count > 0) {
@@ -314,8 +462,18 @@ onMounted(() => {
 // Menu Actions  
 // ===================================
 
+function openLoginModal() {
+  openLogin()
+}
+
 function goToMenu(menuId: string) {
-  router.push(`/training/history?menuId=${menuId}`)
+  // 認証チェック
+  if (!authStore.isAuthenticated) {
+    openLoginModal()
+    return
+  }
+  
+  router.push(`/training/session/${menuId}`)
 }
 
 function toggleFavorite(menu: TrainingMenu) {
@@ -352,11 +510,39 @@ function handleRetry() {
   retry()
 }
 
+// ===================================
+// Body Part Category Functions
+// ===================================
+
+function toggleCategoryExpansion(categoryId: string) {
+  if (expandedCategories.value.has(categoryId)) {
+    expandedCategories.value.delete(categoryId)
+  } else {
+    expandedCategories.value.add(categoryId)
+  }
+}
+
+function expandAllCategories() {
+  bodyPartCategories.value.forEach(category => {
+    expandedCategories.value.add(category.id)
+  })
+}
+
+function collapseAllCategories() {
+  expandedCategories.value.clear()
+}
+
 // Page metadata
 useHead({
-  title: 'トレーニングメニュー - Message',
+  title: 'ホーム - TrecPlans',
   meta: [
-    { name: 'description', content: 'あなたの目標達成をサポートする豊富なトレーニングメニュー' }
+    { name: 'description', content: 'TrecPlansであなたのフィットネス目標を達成しましょう。豊富なトレーニングメニューと詳細な進捗追跡で効率的なワークアウトを実現します。' },
+    { name: 'keywords', content: 'トレーニングメニュー,筋トレ,フィットネス,ワークアウト,進捗管理,TrecPlans' },
+    { property: 'og:title', content: 'ホーム - TrecPlans' },
+    { property: 'og:description', content: 'あなたのフィットネス目標達成をサポートする豊富なトレーニングメニュー' },
+    { property: 'og:type', content: 'website' },
+    { name: 'twitter:title', content: 'ホーム - TrecPlans' },
+    { name: 'twitter:description', content: 'あなたのフィットネス目標達成をサポートする豊富なトレーニングメニュー' }
   ]
 })
 </script>
@@ -685,6 +871,107 @@ useHead({
   font-size: 0.9rem;
 }
 
+/* Body Part Categories */
+.body-part-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.body-part-section {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.body-part-section:hover {
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+
+.category-header {
+  display: flex;
+  align-items: center;
+  padding: 20px 25px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-bottom: 1px solid #dee2e6;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.category-header:hover {
+  background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+}
+
+.category-icon {
+  font-size: 2.5rem;
+  margin-right: 20px;
+  flex-shrink: 0;
+}
+
+.category-info {
+  flex: 1;
+}
+
+.category-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0 0 8px 0;
+}
+
+.category-description {
+  color: #666;
+  font-size: 0.95rem;
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+}
+
+.menu-count {
+  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 12px;
+  display: inline-block;
+}
+
+.category-toggle {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  margin-left: 15px;
+}
+
+.category-toggle:hover {
+  background: rgba(52, 152, 219, 0.1);
+  color: #3498db;
+}
+
+.category-toggle.expanded {
+  transform: rotate(180deg);
+}
+
+.category-menus {
+  padding: 25px;
+  display: grid;
+  gap: 20px;
+}
+
+.category-menus.view-grid {
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+
+.category-menus.view-list {
+  grid-template-columns: 1fr;
+}
+
 @media (max-width: 768px) {
   .welcome-title {
     font-size: 2rem;
@@ -713,6 +1000,32 @@ useHead({
   
   .action-grid {
     grid-template-columns: 1fr;
+  }
+
+  /* Body Part Categories Mobile */
+  .category-header {
+    padding: 15px 20px;
+  }
+  
+  .category-icon {
+    font-size: 2rem;
+    margin-right: 15px;
+  }
+  
+  .category-title {
+    font-size: 1.3rem;
+  }
+  
+  .category-description {
+    font-size: 0.9rem;
+  }
+  
+  .category-menus {
+    padding: 20px;
+  }
+  
+  .category-menus.view-grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   }
 }
 </style>

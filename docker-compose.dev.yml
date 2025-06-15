@@ -1,0 +1,96 @@
+# 開発環境用 Docker Compose
+# APIとフロントエンドのみの部分更新が可能
+version: '3.8'
+
+services:
+  # フロントエンド
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: development  # 開発用マルチステージビルド
+    ports:
+      - "3000:80"
+    environment:
+      - NODE_ENV=development
+      - NUXT_PUBLIC_API_BASE_URL=/api
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.nuxt
+    depends_on:
+      - api
+    networks:
+      - trecplans-dev
+    restart: unless-stopped
+
+  # リバースプロキシ
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - frontend
+      - api
+    networks:
+      - trecplans-dev
+    restart: unless-stopped
+
+  # API (バックエンド)
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+      target: development  # 開発用マルチステージビルド
+    ports:
+      - "5001:80"
+    environment:
+      - ASPNETCORE_URLS=http://+:80
+      - ASPNETCORE_ENVIRONMENT=Development
+      - CONNECTIONSTRINGS__DEFAULTCONNECTION=Server=db;Database=MessageRDB;User=sa;Password=Your_password123;Encrypt=false;
+      - JWT__SECRET=YwN7c!@#m02zL*sd82lMk!adwaf4d2rg
+      - JWT__ISSUER=trecplans.local
+      - JWT__AUDIENCE=trecplans_user
+      - ACCESS_TOKEN_EXPIRE_MIN=15
+      - REFRESH_TOKEN_EXPIRE_MIN=20160
+    volumes:
+      - ./api:/app
+      - /app/bin
+      - /app/obj
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - trecplans-dev
+    restart: unless-stopped
+
+  # データベース (永続化重要)
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    ports:
+      - "1433:1433"
+    environment:
+      SA_PASSWORD: "Your_password123"
+      ACCEPT_EULA: "Y"
+    volumes:
+      - message_sqlserver_data:/var/opt/mssql
+      - ./DB_SCRIPT:/scripts:ro  # スクリプト用の読み取り専用マウント
+    networks:
+      - trecplans-dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "/opt/mssql-tools/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "Your_password123", "-Q", "SELECT 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+networks:
+  trecplans-dev:
+    driver: bridge
+
+volumes:
+  message_sqlserver_data:
+    # 本番環境と分離されたデータベースボリューム

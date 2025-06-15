@@ -1,6 +1,5 @@
 using Api.Models;
-using Common.Shared.Constants;
-using Common.Shared.Exceptions;
+using Api.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace Api.Common
@@ -33,7 +32,7 @@ namespace Api.Common
 
             if (userData == null)
             {
-                throw new AppException(ApplicationConstants.ErrorCodes.UserNotFound);
+                throw new AppException(ApplicationConstants.ErrorCodes.UserNotFound, "指定されたユーザーが見つかりません");
             }
             
             return userData;
@@ -61,7 +60,7 @@ namespace Api.Common
 
             if (userData == null)
             {
-                throw new AppException(ApplicationConstants.ErrorCodes.UserNotFound);
+                throw new AppException(ApplicationConstants.ErrorCodes.UserNotFound, "指定されたユーザーが見つかりません");
             }
             
             return userData;
@@ -89,7 +88,7 @@ namespace Api.Common
 
             if (userData == null)
             {
-                throw new AppException(ApplicationConstants.ErrorCodes.UserNotFound);
+                throw new AppException(ApplicationConstants.ErrorCodes.UserNotFound, "指定されたユーザーが見つかりません");
             }
             
             return userData;
@@ -117,7 +116,7 @@ namespace Api.Common
 
             if (userData == null)
             {
-                throw new AppException(ApplicationConstants.ErrorCodes.UserNotFound);
+                throw new AppException(ApplicationConstants.ErrorCodes.UserNotFound, "指定されたユーザーが見つかりません");
             }
             
             return userData;

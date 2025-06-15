@@ -3,9 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Api.Models;
 using Services;
-using Common.Shared.Constants;
-using Common.Shared.Exceptions;
-using Common.Shared.Utilities;
+using Api.Common;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -63,7 +61,7 @@ try
     }
     catch (AppException ex)
     {
-        logger.LogError("JWT設定検証失敗: {Message}", ex.ErrorInfo.Message);
+        logger.LogError("JWT設定検証失敗: {Message}", ex.UserMessage);
         throw;
     }
 
@@ -193,14 +191,14 @@ try
     // セキュリティヘッダー追加
     app.Use(async (context, next) =>
     {
-        context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
-        context.Response.Headers.Add("X-Frame-Options", "DENY");
-        context.Response.Headers.Add("X-XSS-Protection", "1; mode=block");
-        context.Response.Headers.Add("Referrer-Policy", "strict-origin-when-cross-origin");
+        context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+        context.Response.Headers["X-Frame-Options"] = "DENY";
+        context.Response.Headers["X-XSS-Protection"] = "1; mode=block";
+        context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
         
         if (!app.Environment.IsDevelopment())
         {
-            context.Response.Headers.Add("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+            context.Response.Headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
         }
 
         await next();
@@ -209,12 +207,12 @@ try
     // CORS（認証より前に配置）
     app.UseCors();
 
+    // ルーティング（認証より前に配置）
+    app.UseRouting();
+
     // 認証・認可
     app.UseAuthentication();
     app.UseAuthorization();
-
-    // ルーティング
-    app.UseRouting();
 
     // グローバル例外ハンドリング
     app.UseExceptionHandler(errorApp =>
@@ -228,17 +226,17 @@ try
                 
                 if (exceptionFeature.Error is AppException appEx)
                 {
-                    StructuredLogger.LogError(requestLogger, appEx, context.Request);
-                    var response = HttpResponseHelper.CreateErrorResponse(appEx);
-                    context.Response.StatusCode = (int)appEx.ErrorInfo.StatusCode;
+                    StructuredLogger.LogError($"Global exception handler - AppException: {appEx.UserMessage}", appEx, new { path = context.Request.Path.ToString() });
+                    var response = HttpResponseHelper.CreateErrorResponse(appEx.ErrorCode, appEx.UserMessage);
+                    context.Response.StatusCode = 500;
                     context.Response.ContentType = ApplicationConstants.ContentTypes.Json;
                     await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(response.Value));
                 }
                 else
                 {
-                    StructuredLogger.LogUnhandledException(requestLogger, exceptionFeature.Error, context.Request, "Global exception handler");
-                    var response = HttpResponseHelper.CreateErrorResponse(ApplicationConstants.ErrorCodes.ServerError);
-                    context.Response.StatusCode = (int)ApplicationConstants.ErrorCodes.ServerError.StatusCode;
+                    StructuredLogger.LogUnhandledException(exceptionFeature.Error, new { handler = "Global exception handler", path = context.Request.Path.ToString() });
+                    var response = HttpResponseHelper.CreateErrorResponse(ApplicationConstants.ErrorCodes.ServerError, "システムエラーが発生しました");
+                    context.Response.StatusCode = 500;
                     context.Response.ContentType = ApplicationConstants.ContentTypes.Json;
                     await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(response.Value));
                 }
@@ -277,7 +275,7 @@ try
 catch (AppException ex)
 {
     // アプリケーション固有の例外
-    Console.Error.WriteLine($"起動失敗 - {ex.ErrorInfo.Code}: {ex.ErrorInfo.Message}");
+    Console.Error.WriteLine($"起動失敗 - {ex.ErrorCode}: {ex.UserMessage}");
     Environment.Exit(1);
 }
 catch (Exception ex)
