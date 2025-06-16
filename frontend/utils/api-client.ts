@@ -582,7 +582,7 @@ export class TrainingApi {
    */
   async get<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
     // トレーニング関連のエンドポイントのプレフィックスを自動追加
-    const fullEndpoint = endpoint.startsWith('/') ? `/training${endpoint}` : `/training/${endpoint}`
+    const fullEndpoint = endpoint.startsWith('/') ? `${endpoint}` : `/${endpoint}`
     return this.client.get<T>(fullEndpoint, options)
   }
 
@@ -591,7 +591,7 @@ export class TrainingApi {
    */
   async post<T>(endpoint: string, data?: any, options: RequestOptions = {}): Promise<T> {
     // トレーニング関連のエンドポイントのプレフィックスを自動追加
-    const fullEndpoint = endpoint.startsWith('/') ? `/training${endpoint}` : `/training/${endpoint}`
+    const fullEndpoint = endpoint.startsWith('/') ? `${endpoint}` : `/${endpoint}`
     return this.client.post<T>(fullEndpoint, data, options)
   }
 
@@ -600,7 +600,7 @@ export class TrainingApi {
    */
   async put<T>(endpoint: string, data?: any, options: RequestOptions = {}): Promise<T> {
     // トレーニング関連のエンドポイントのプレフィックスを自動追加
-    const fullEndpoint = endpoint.startsWith('/') ? `/training${endpoint}` : `/training/${endpoint}`
+    const fullEndpoint = endpoint.startsWith('/') ? `${endpoint}` : `/${endpoint}`
     return this.client.put<T>(fullEndpoint, data, options)
   }
 
@@ -609,7 +609,7 @@ export class TrainingApi {
    */
   async delete<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
     // トレーニング関連のエンドポイントのプレフィックスを自動追加
-    const fullEndpoint = endpoint.startsWith('/') ? `/training${endpoint}` : `/training/${endpoint}`
+    const fullEndpoint = endpoint.startsWith('/') ? `${endpoint}` : `/${endpoint}`
     return this.client.delete<T>(fullEndpoint, options)
   }
 }

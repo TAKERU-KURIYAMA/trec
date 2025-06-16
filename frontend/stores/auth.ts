@@ -89,7 +89,7 @@ export const useAuthStore = defineStore('auth', () => {
           try {
             // トークンの有効性を一般的な validate エンドポイントで検証
             // Authorization ヘッダーを明示的に指定
-            const response = await apiClient.post('/api/auth/validate', null, {
+            const response = await apiClient.post('/auth/validate', null, {
               headers: {
                 'Authorization': `Bearer ${storedToken}`
               }
@@ -155,7 +155,7 @@ export const useAuthStore = defineStore('auth', () => {
             
             // APIからユーザー情報を取得（POSTメソッドで認証ヘッダーを明示的に指定）
             console.log('📡 Calling /api/auth/validate to restore user data')
-            const response = await apiClient.post('/api/auth/validate', null, {
+            const response = await apiClient.post('/auth/validate', null, {
               headers: {
                 'Authorization': `Bearer ${storedToken}`
               }

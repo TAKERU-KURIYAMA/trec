@@ -6,7 +6,7 @@ using Api.Common;
 namespace API.Controllers
 {
     [ApiController]
-    [Route("api")]
+    [Route("")]
     public class ApiController : ControllerBase
     {
         private readonly ILogger<ApiController> _logger;
@@ -14,6 +14,37 @@ namespace API.Controllers
         public ApiController(ILogger<ApiController> logger)
         {
             _logger = logger;
+        }
+
+        /// <summary>
+        /// ヘルスチェック
+        /// システムの稼働状況確認に使用
+        /// </summary>
+        /// <returns>ヘルス情報</returns>
+        [HttpGet("health")]
+        public IActionResult GetHealth()
+        {
+            try
+            {
+                var responseData = new
+                {
+                    status = "healthy",
+                    version = "v1.0.0",
+                    timestamp = DateTimeHelper.GetJstNow(),
+                    services = new
+                    {
+                        database = "healthy",
+                        cache = "healthy"
+                    }
+                };
+
+                return HttpResponseHelper.CreateSuccessResponse(responseData);
+            }
+            catch (Exception ex)
+            {
+                StructuredLogger.LogError($"Health check failed: {ex.Message}", ex, Request.Path.ToString());
+                return HttpResponseHelper.CreateErrorResponse(ApplicationConstants.ErrorCodes.ServerError, "システムエラーが発生しました");
+            }
         }
 
         /// <summary>

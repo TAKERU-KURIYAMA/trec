@@ -104,7 +104,7 @@ const handleLogin = async () => {
     // パスワードをSHA256でハッシュ化
     const hashedPassword = await hashPassword(password.value)
     
-    const response = await apiClient.post('/api/auth/login', {
+    const response = await apiClient.post('/auth/login', {
       loginId: loginId.value,
       password: hashedPassword
     })

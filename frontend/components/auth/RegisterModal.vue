@@ -226,7 +226,7 @@ const handleRegister = async () => {
     // パスワードをSHA256でハッシュ化
     const hashedPassword = await hashPassword(password.value)
     
-    const response = await apiClient.post('/api/auth/register', {
+    const response = await apiClient.post('/auth/register', {
       loginId: loginId.value,
       displayName: displayName.value,
       password: hashedPassword

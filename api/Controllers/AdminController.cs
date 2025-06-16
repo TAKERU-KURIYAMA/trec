@@ -11,7 +11,7 @@ namespace API.Controllers
     /// 管理者専用のAPIエンドポイントを提供するコントローラー
     /// トレーニングメニューとタグの管理機能を担当
     /// </summary>
-    [Route("api/admin")]
+    [Route("admin")]
     public class AdminController : BaseController
     {
         private readonly MessageRDBContext _context;

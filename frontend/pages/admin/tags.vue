@@ -260,7 +260,7 @@ const loadTags = async () => {
   error.value = ''
   
   try {
-    const response = await apiClient.get('/api/admin/tags')
+    const response = await apiClient.get('/admin/tags')
     tags.value = response.tags || []
   } catch (err) {
     console.error('タグ読み込みエラー:', err)
@@ -286,14 +286,14 @@ const createTag = async () => {
   createError.value = ''
   
   try {
-    const response = await apiClient.post('/api/admin/tags', {
+    const response = await apiClient.post('/admin/tags', {
       tagId: newTag.value.tagId,
       tagName: newTag.value.tagName,
       englishName: newTag.value.englishName || null
     })
     
     // キャッシュを無効化してから再読み込み
-    apiClient.invalidateCache('/api/admin/tags')
+    apiClient.invalidateCache('/admin/tags')
     
     await loadTags() // タグリストを再読み込み
     closeCreateModal()

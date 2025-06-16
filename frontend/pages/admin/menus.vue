@@ -537,7 +537,7 @@ const loadMenus = async () => {
   error.value = ''
   
   try {
-    const response = await apiClient.get('/api/admin/menus')
+    const response = await apiClient.get('/admin/menus')
     menus.value = response.menus || []
   } catch (err) {
     console.error('メニュー読み込みエラー:', err)
@@ -564,7 +564,7 @@ const createMenu = async () => {
   createError.value = ''
   
   try {
-    const response = await apiClient.post('/api/admin/menus', {
+    const response = await apiClient.post('/admin/menus', {
       menuId: newMenu.value.menuId,
       menuName: newMenu.value.menuName,
       englishName: newMenu.value.englishName || null,
@@ -572,7 +572,7 @@ const createMenu = async () => {
     })
     
     // キャッシュを無効化してから再読み込み
-    apiClient.invalidateCache('/api/admin/menus')
+    apiClient.invalidateCache('/admin/menus')
     
     closeCreateModal()
     console.log('メニュー作成成功:', response)
@@ -612,14 +612,14 @@ const updateMenu = async () => {
   editError.value = ''
   
   try {
-    const response = await apiClient.put(`/api/admin/menus/${editingMenu.value.menu_id}`, {
+    const response = await apiClient.put(`/admin/menus/${editingMenu.value.menu_id}`, {
       menuName: editForm.value.menuName,
       englishName: editForm.value.englishName || null,
       description: editForm.value.description || null
     })
     
     // キャッシュを無効化してから再読み込み
-    apiClient.invalidateCache('/api/admin/menus')
+    apiClient.invalidateCache('/admin/menus')
     
     await loadMenus() // メニューリストを再読み込み
     closeEditModal()
@@ -648,10 +648,10 @@ const confirmDelete = async () => {
   deleteError.value = ''
   
   try {
-    await apiClient.delete(`/api/admin/menus/${deletingMenu.value.menu_id}`)
+    await apiClient.delete(`/admin/menus/${deletingMenu.value.menu_id}`)
     
     // キャッシュを無効化してから再読み込み
-    apiClient.invalidateCache('/api/admin/menus')
+    apiClient.invalidateCache('/admin/menus')
     
     await loadMenus() // メニューリストを再読み込み
     closeDeleteModal()
@@ -684,7 +684,7 @@ const loadAvailableTags = async () => {
   tagsError.value = ''
   
   try {
-    const response = await apiClient.get('/api/admin/tags')
+    const response = await apiClient.get('/admin/tags')
     availableTags.value = response.tags || []
   } catch (err) {
     console.error('タグ読み込みエラー:', err)
@@ -699,12 +699,12 @@ const updateMenuTags = async () => {
   tagsError.value = ''
   
   try {
-    await apiClient.put(`/api/admin/menus/${editingMenuForTags.value.menu_id}/tags`, {
+    await apiClient.put(`/admin/menus/${editingMenuForTags.value.menu_id}/tags`, {
       tagIds: selectedTagIds.value
     })
     
     // キャッシュを無効化してから再読み込み
-    apiClient.invalidateCache('/api/admin/menus')
+    apiClient.invalidateCache('/admin/menus')
     
     await loadMenus() // メニューリストを再読み込み
     closeTagsModal()

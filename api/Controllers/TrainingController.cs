@@ -11,7 +11,7 @@ namespace API.Controllers
     /// トレーニング関連のAPIエンドポイントを提供するコントローラー
     /// トレーニングメニューの取得、記録の管理などを担当
     /// </summary>
-    [Route("api/training")]
+    [Route("training")]
     public class TrainingController : BaseController
     {
         private readonly MessageRDBContext _context;

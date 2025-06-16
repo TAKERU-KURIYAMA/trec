@@ -6,7 +6,7 @@ using System.ComponentModel.DataAnnotations;
 namespace API.Controllers
 {
     [ApiController]
-    [Route("api/auth")]
+    [Route("auth")]
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
