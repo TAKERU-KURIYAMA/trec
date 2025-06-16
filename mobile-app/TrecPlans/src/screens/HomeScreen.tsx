@@ -23,7 +23,7 @@ import Animated, {
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TrainingMenu } from '../types/enhanced';
-import { useMenus } from '../hooks/useTrainingStore';
+import { useMenus, useWorkoutSession } from '../hooks/useTrainingStore';
 import { useNotifications } from '../hooks/useNotifications';
 import TrainingCard from '../components/TrainingCard';
 
@@ -36,6 +36,9 @@ const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 const HomeScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const notifications = useNotifications();
+  
+  // Workout session management
+  const { startWorkoutSession } = useWorkoutSession();
   
   // State from advanced store
   const {
@@ -161,9 +164,16 @@ const HomeScreen: React.FC = () => {
       actions: [
         {
           text: '開始',
-          onPress: () => {
-            // TODO: Navigate to workout session
-            notifications.workoutNotifications.sessionStarted(menu.jpName);
+          onPress: async () => {
+            try {
+              const sessionId = await startWorkoutSession(menu.menuId);
+              notifications.workoutNotifications.sessionStarted(menu.jpName);
+              notifications.success('ワークアウト開始', `${menu.jpName}のセッションを開始しました`);
+              // Note: In a full implementation, this would navigate to a WorkoutSession screen
+              // For now, the session is started and can be managed through the store
+            } catch (error) {
+              notifications.error('開始エラー', 'ワークアウトセッションの開始に失敗しました');
+            }
           },
         },
         {

@@ -233,8 +233,10 @@ const handleRegister = async () => {
     })
 
     if (response && response.token && response.user) {
-      authStore.setAuth(response.token, response.user)
+      await authStore.setAuth(response.token, response.user)
       success.value = 'アカウントが作成されました'
+      
+      console.log('🚀 Registration successful, admin status:', authStore.isAdmin)
       
       setTimeout(() => {
         emit('success')

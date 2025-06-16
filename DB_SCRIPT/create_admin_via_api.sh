@@ -7,7 +7,7 @@ echo "==================================="
 echo "管理者アカウント作成スクリプト"
 echo "==================================="
 
-API_BASE_URL=${API_BASE_URL:-"http://localhost:5001"}
+API_BASE_URL=${API_BASE_URL:-"http://local-trecplans"}
 
 echo "API URL: $API_BASE_URL"
 echo ""

@@ -130,10 +130,38 @@ export const useNotifications = () => {
   const triggerSound = useCallback((type: NotificationType) => {
     if (!config.enableSound) return;
     
-    // TODO: 実装
-    // - react-native-sound などを使用してカスタム音声を再生
-    // - タイプに応じて異なる音声を再生
-  }, [config.enableSound]);
+    // Play system sounds based on notification type
+    // For production: integrate react-native-sound or similar library for custom sounds
+    try {
+      const soundMap = {
+        success: 'systemSoundID', // 1322 for success tone
+        error: 'systemSoundID',   // 1325 for error tone  
+        warning: 'systemSoundID', // 1324 for warning tone
+        info: 'systemSoundID',    // 1310 for info tone
+      };
+      
+      // For now, use vibration as audio feedback since custom audio requires additional setup
+      if (type === 'success') {
+        triggerVibration([0, 100, 50, 100]); // Double short vibration for success
+      } else if (type === 'error') {
+        triggerVibration([0, 500]); // Long vibration for error
+      } else if (type === 'warning') {
+        triggerVibration([0, 200, 100, 200, 100, 200]); // Triple pattern for warning
+      } else {
+        triggerVibration([0, 150]); // Standard vibration for info
+      }
+      
+      // Future implementation with react-native-sound:
+      // const Sound = require('react-native-sound');
+      // const soundFile = `${type}.mp3`;
+      // const sound = new Sound(soundFile, Sound.MAIN_BUNDLE, (error) => {
+      //   if (!error) sound.play();
+      // });
+      
+    } catch (error) {
+      console.warn('Failed to trigger sound notification:', error);
+    }
+  }, [config.enableSound, triggerVibration]);
 
   /**
    * 基本的な通知を表示

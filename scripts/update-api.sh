@@ -36,9 +36,9 @@ echo "⏳ APIの起動を待機中..."
 sleep 15
 
 # APIのヘルスチェック
-if curl -f http://localhost:5001/api/version > /dev/null 2>&1; then
+if curl -f http://local-trecplans/api/version > /dev/null 2>&1; then
     echo "✅ APIの更新が完了しました！"
-    echo "🌐 APIアクセス先: http://localhost:5001"
+    echo "🌐 APIアクセス先: http://local-trecplans/api"
 else
     echo "❌ APIの起動に失敗しました"
     echo "📋 ログを確認してください:"

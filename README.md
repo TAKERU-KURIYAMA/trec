@@ -41,8 +41,8 @@ docker-compose up --build
 ```
 
 3. **アクセス**
-- アプリケーション: http://localhost
-- API直接アクセス: http://localhost:5001
+- アプリケーション: http://local-trecplans
+- API: http://local-trecplans/api
 - データベース: localhost:1433 (sa/Your_password123)
 - Redis: localhost:6379
 

@@ -42,7 +42,7 @@ sleep 20
 
 # APIのヘルスチェック
 echo "🔍 APIのヘルスチェック中..."
-if curl -f http://localhost:5001/api/version > /dev/null 2>&1; then
+if curl -f http://local-trecplans/api/version > /dev/null 2>&1; then
     echo "✅ API正常動作確認"
 else
     echo "⚠️  API接続に問題があります"
@@ -50,7 +50,7 @@ fi
 
 # フロントエンドのヘルスチェック
 echo "🔍 フロントエンドのヘルスチェック中..."
-if curl -f http://localhost:80 > /dev/null 2>&1; then
+if curl -f http://local-trecplans > /dev/null 2>&1; then
     echo "✅ フロントエンド正常動作確認"
 else
     echo "⚠️  フロントエンド接続に問題があります"
@@ -68,8 +68,8 @@ echo ""
 echo "✅ アプリケーション層の更新が完了しました！"
 echo ""
 echo "🌐 アクセス先:"
-echo "   フロントエンド: http://localhost"
-echo "   API (直接):   http://localhost:5001"
+echo "   フロントエンド: http://local-trecplans"
+echo "   API:          http://local-trecplans/api"
 echo "   データベース:   localhost:1433"
 echo ""
 echo "📋 ログ確認コマンド:"

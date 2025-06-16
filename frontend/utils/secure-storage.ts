@@ -26,13 +26,18 @@ class SecureStorage {
         expiresAt: expiresInMs ? Date.now() + expiresInMs : undefined
       }
 
-      localStorage.setItem(this.prefix + key, JSON.stringify(data))
+      const fullKey = this.prefix + key
+      localStorage.setItem(fullKey, JSON.stringify(data))
       
-      console.log(`SecureStorage: Stored data for key: ${key}`, {
+      console.log(`SecureStorage: Stored data for key: ${key} (fullKey: ${fullKey})`, {
         hasExpiry: !!data.expiresAt,
         expiresAt: data.expiresAt ? new Date(data.expiresAt).toISOString() : 'never',
         valueLength: value.length
       })
+      
+      // 検証：保存直後に読み取りテスト
+      const testRead = localStorage.getItem(fullKey)
+      console.log(`SecureStorage: Verification read for ${fullKey}:`, !!testRead)
     } catch (error) {
       console.warn('Failed to store data securely:', error)
     }

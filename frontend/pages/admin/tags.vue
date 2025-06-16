@@ -228,7 +228,7 @@ import { apiClient } from '~/utils/api-client'
 
 // 管理者権限が必要なページ
 definePageMeta({
-  middleware: 'auth'
+  middleware: 'admin'
 })
 
 const authStore = useAuthStore()
@@ -291,6 +291,9 @@ const createTag = async () => {
       tagName: newTag.value.tagName,
       englishName: newTag.value.englishName || null
     })
+    
+    // キャッシュを無効化してから再読み込み
+    apiClient.invalidateCache('/api/admin/tags')
     
     await loadTags() // タグリストを再読み込み
     closeCreateModal()

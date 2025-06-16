@@ -153,12 +153,9 @@ const handleLogin = async () => {
     // APIレスポンス形式を確認
     // APIクライアントがすでにdata部分を展開済み
     if (response && response.token && response.user) {
-      authStore.setAuth(response.token, response.user)
+      await authStore.setAuth(response.token, response.user)
       
-      // 管理者権限をチェックして更新
-      if (response.user.isAdmin) {
-        authStore.isAdmin = true
-      }
+      console.log('🚀 Login successful, admin status:', authStore.isAdmin)
       
       emit('success')
       emit('close')

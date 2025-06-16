@@ -191,8 +191,10 @@ const handleRegister = async () => {
     })
 
     if (response && response.token && response.user) {
-      authStore.setAuth(response.token, response.user)
+      await authStore.setAuth(response.token, response.user)
       success.value = 'アカウントが作成されました。ダッシュボードに移動します...'
+      
+      console.log('🚀 Registration page successful, admin status:', authStore.isAdmin)
       
       setTimeout(async () => {
         await router.push('/dashboard')

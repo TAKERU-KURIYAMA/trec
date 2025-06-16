@@ -649,8 +649,8 @@ export function useApiClient() {
  */
 export const apiClient = new ApiClient(
   typeof window !== 'undefined' 
-    ? (window.location.port === '8080' ? '' : 'http://localhost:5001')
-    : ''
+    ? '/api' // 常にnginx経由でアクセス
+    : '/api'
 )
 
 // 開発環境でのデバッグ用

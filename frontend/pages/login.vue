@@ -110,7 +110,8 @@ const handleLogin = async () => {
     })
 
     if (response.data.success) {
-      authStore.setAuth(response.data.data.token, response.data.data.user)
+      await authStore.setAuth(response.data.data.token, response.data.data.user)
+      console.log('🚀 Login page successful, admin status:', authStore.isAdmin)
       await router.push('/dashboard')
     } else {
       error.value = response.data.error.message || 'ログインに失敗しました'

@@ -30,7 +30,7 @@
             :key="tagId"
             class="tag"
           >
-            {{ tagId }}
+            {{ getTagName(tagId) }}
           </span>
           <span v-if="menu.tagIds?.length > 3" class="tag-more">
             +{{ menu.tagIds.length - 3 }}
@@ -75,7 +75,7 @@
               :key="tagId"
               class="tag"
             >
-              {{ tagId }}
+              {{ getTagName(tagId) }}
             </span>
           </div>
         </div>
@@ -134,6 +134,10 @@ const props = defineProps({
     type: Object,
     required: true
   },
+  tags: {
+    type: Array,
+    default: () => []
+  },
   viewMode: {
     type: String,
     default: 'grid'
@@ -148,6 +152,14 @@ function handleClick() {
 
 function toggleFavorite() {
   emit('favorite', props.menu)
+}
+
+function getTagName(tagId) {
+  if (props.tags && props.tags.length > 0) {
+    const tag = props.tags.find(t => t.tagId === tagId)
+    return tag?.jpName || tagId
+  }
+  return tagId
 }
 
 function getPrimaryCategory() {

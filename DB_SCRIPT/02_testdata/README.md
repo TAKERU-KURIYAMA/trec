@@ -60,7 +60,7 @@
 
 または手動でAPI呼び出し：
 ```bash
-curl -X POST "http://localhost:5001/api/account/user" \
+curl -X POST "http://local-trecplans/api/account/user" \
   -H "Content-Type: application/json" \
   -d '{"loginId": "admin", "password": "Test123!", "displayName": "管理者"}'
 ```

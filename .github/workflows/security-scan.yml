@@ -1,0 +1,249 @@
+name: Security Scan
+
+on:
+  schedule:
+    # Run every Monday at 2:00 AM UTC
+    - cron: '0 2 * * 1'
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  secret-scan:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run TruffleHog
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: main
+          head: HEAD
+          extra_args: --debug --only-verified
+
+  dependency-scan:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        component: [frontend, mobile, api]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Frontend/Mobile dependency scan
+      - name: Setup Node.js
+        if: matrix.component != 'api'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install npm dependencies (Frontend)
+        if: matrix.component == 'frontend'
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Install npm dependencies (Mobile)
+        if: matrix.component == 'mobile'
+        run: |
+          cd mobile-app/TrecPlans
+          npm ci
+
+      - name: Run npm audit (Frontend)
+        if: matrix.component == 'frontend'
+        run: |
+          cd frontend
+          npm audit --audit-level=moderate
+
+      - name: Run npm audit (Mobile)
+        if: matrix.component == 'mobile'
+        run: |
+          cd mobile-app/TrecPlans
+          npm audit --audit-level=moderate
+
+      # .NET dependency scan
+      - name: Setup .NET
+        if: matrix.component == 'api'
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0'
+
+      - name: Restore .NET dependencies
+        if: matrix.component == 'api'
+        run: |
+          dotnet restore api/Api.sln
+
+      - name: Run .NET security scan
+        if: matrix.component == 'api'
+        run: |
+          dotnet list api/Api.sln package --vulnerable --include-transitive
+
+  container-scan:
+    name: Container Security Scan
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        component: [frontend, api]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build -t message-${{ matrix.component }}:latest ./${{ matrix.component }}
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'message-${{ matrix.component }}:latest'
+          format: 'sarif'
+          output: 'trivy-${{ matrix.component }}.sarif'
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-${{ matrix.component }}.sarif'
+
+  code-quality:
+    name: Code Quality Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: CodeQL Analysis
+        uses: github/codeql-action/init@v2
+        with:
+          languages: 'javascript,csharp'
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v2
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+
+  license-check:
+    name: License Compliance Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install license checker
+        run: npm install -g license-checker
+
+      - name: Check Frontend licenses
+        run: |
+          cd frontend
+          npm ci
+          license-checker --onlyAllow "MIT;Apache-2.0;BSD-3-Clause;BSD-2-Clause;ISC" --excludePrivatePackages
+
+      - name: Check Mobile app licenses
+        run: |
+          cd mobile-app/TrecPlans
+          npm ci
+          license-checker --onlyAllow "MIT;Apache-2.0;BSD-3-Clause;BSD-2-Clause;ISC" --excludePrivatePackages
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0'
+
+      - name: Install .NET license checker
+        run: dotnet tool install --global dotnet-project-licenses
+
+      - name: Check .NET licenses
+        run: |
+          cd api
+          dotnet restore
+          dotnet-project-licenses --input Api.sln
+
+  infrastructure-scan:
+    name: Infrastructure Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: .
+          framework: dockerfile,docker_image,secrets
+          output_format: sarif
+          output_file_path: checkov.sarif
+
+      - name: Upload Checkov scan results
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: checkov.sarif
+
+  notify:
+    name: Security Scan Notification
+    runs-on: ubuntu-latest
+    needs: [secret-scan, dependency-scan, container-scan, code-quality, license-check, infrastructure-scan]
+    if: always() && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Determine overall status
+        id: status
+        run: |
+          if [[ "${{ needs.secret-scan.result }}" == "failure" ]] || \
+             [[ "${{ needs.dependency-scan.result }}" == "failure" ]] || \
+             [[ "${{ needs.container-scan.result }}" == "failure" ]] || \
+             [[ "${{ needs.code-quality.result }}" == "failure" ]] || \
+             [[ "${{ needs.license-check.result }}" == "failure" ]] || \
+             [[ "${{ needs.infrastructure-scan.result }}" == "failure" ]]; then
+            echo "status=failure" >> $GITHUB_OUTPUT
+          else
+            echo "status=success" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Notify security scan results
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ steps.status.outputs.status }}
+          channel: '#security'
+          text: |
+            🔒 Security scan completed for main branch
+            
+            Results:
+            • Secret scan: ${{ needs.secret-scan.result }}
+            • Dependency scan: ${{ needs.dependency-scan.result }}
+            • Container scan: ${{ needs.container-scan.result }}
+            • Code quality: ${{ needs.code-quality.result }}
+            • License check: ${{ needs.license-check.result }}
+            • Infrastructure scan: ${{ needs.infrastructure-scan.result }}
+            
+            View details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

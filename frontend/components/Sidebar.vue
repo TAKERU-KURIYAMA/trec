@@ -80,7 +80,7 @@
       </div>
 
       <!-- Admin Section (only visible to admin and after auth loading) -->
-      <div v-if="!authStore.isLoading && authStore.isAdmin" class="nav-section admin-section">
+      <div v-if="showAdminMenu" class="nav-section admin-section">
         <h4 class="nav-section-title">管理</h4>
         <NuxtLink 
           to="/admin/menus" 
@@ -216,6 +216,24 @@ const sidebarClasses = computed(() => ({
   'sidebar-open': isOpen.value,
   'sidebar-mobile': isMobile.value
 }))
+
+// Admin menu visibility - separate computed for better reactivity
+const showAdminMenu = computed(() => {
+  const isAuthenticated = authStore.isAuthenticated
+  const isAdmin = authStore.isAdmin
+  const isLoading = authStore.isLoading
+  
+  console.log('🔍 Admin menu visibility check:', {
+    isAuthenticated,
+    isAdmin,
+    isLoading,
+    shouldShow: isAuthenticated && isAdmin
+  })
+  
+  // Show admin menu if user is authenticated and is admin
+  // Don't let loading state hide it if we already know they're admin
+  return isAuthenticated && isAdmin
+})
 
 // Methods
 function toggleSidebar() {

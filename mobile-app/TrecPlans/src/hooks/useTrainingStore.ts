@@ -24,6 +24,22 @@ import {
 import { apiClient, ApiError, NetworkError } from '../services/apiClient';
 
 /**
+ * Get current user ID from AsyncStorage
+ */
+async function getCurrentUserId(): Promise<string> {
+  try {
+    const storedUser = await AsyncStorage.getItem('@TrecPlans:user');
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      return user.userId || 'current-user';
+    }
+  } catch (error) {
+    console.error('Error getting current user ID:', error);
+  }
+  return 'current-user'; // fallback
+}
+
+/**
  * トレーニングストアの状態インターface
  */
 interface TrainingStoreState {
@@ -197,7 +213,11 @@ export const useTrainingStore = create<TrainingStoreState>()(
           });
 
           const records = await apiClient.get<TrainingRecord[]>('/training/records', {
-            // TODO: Add query parameters
+            params: {
+              ...params,
+              limit: params.limit || 50,
+              offset: params.offset || 0,
+            }
           });
 
           set(state => {
@@ -384,7 +404,7 @@ export const useTrainingStore = create<TrainingStoreState>()(
         const session: WorkoutSession = {
           sessionId,
           menuId,
-          userId: 'current-user', // TODO: Get from auth
+          userId: await getCurrentUserId(), // Get from auth context
           status: 'active',
           startTime: new Date(),
           currentSetIndex: 0,
@@ -593,7 +613,37 @@ export const useTrainingStore = create<TrainingStoreState>()(
           }
 
           // その他の永続化データを読み込み
-          // TODO: Add more persisted data loading
+          
+          // Search history
+          const searchHistoryData = await AsyncStorage.getItem('@TrecPlans:searchHistory');
+          if (searchHistoryData) {
+            const searchHistory = JSON.parse(searchHistoryData);
+            set(state => {
+              state.searchHistory = searchHistory.slice(0, 10); // Keep last 10 searches
+            });
+          }
+          
+          // Filter preferences
+          const filterPrefsData = await AsyncStorage.getItem('@TrecPlans:filterPrefs');
+          if (filterPrefsData) {
+            const filterPrefs = JSON.parse(filterPrefsData);
+            set(state => {
+              state.filters = { ...state.filters, ...filterPrefs };
+            });
+          }
+          
+          // Last training session data
+          const lastSessionData = await AsyncStorage.getItem('@TrecPlans:lastSession');
+          if (lastSessionData) {
+            const lastSession = JSON.parse(lastSessionData);
+            set(state => {
+              // Restore incomplete session if it exists and is recent (within 2 hours)
+              if (lastSession.status === 'active' && 
+                  Date.now() - new Date(lastSession.startTime).getTime() < 2 * 60 * 60 * 1000) {
+                state.currentSession = lastSession;
+              }
+            });
+          }
 
         } catch (error) {
           console.warn('Failed to load persisted data:', error);
@@ -608,7 +658,14 @@ export const useTrainingStore = create<TrainingStoreState>()(
           await AsyncStorage.multiSet([
             ['@TrecPlans:favorites', JSON.stringify(Array.from(state.favoriteMenuIds))],
             ['@TrecPlans:lastSync', state.lastSyncAt?.toISOString() || ''],
-            // TODO: Add more data persistence
+            ['@TrecPlans:searchHistory', JSON.stringify(state.searchHistory || [])],
+            ['@TrecPlans:filterPrefs', JSON.stringify({
+              sortBy: state.filters.sortBy,
+              sortOrder: state.filters.sortOrder,
+              bodyPart: state.filters.bodyPart,
+              difficulty: state.filters.difficulty,
+            })],
+            ['@TrecPlans:lastSession', JSON.stringify(state.currentSession || {})],
           ]);
 
         } catch (error) {

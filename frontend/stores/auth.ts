@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import { tokenManager } from '~/utils/secure-storage'
 import { apiClient } from '~/utils/api-client'
 
@@ -15,15 +15,16 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
   const isLoading = ref(false)
   const isAdmin = ref(false)
+  const isInitialized = ref(false)
 
   const isAuthenticated = computed(() => !!token.value && !!user.value)
 
-  const setAuth = (authToken: string, userData: User) => {
+  const setAuth = async (authToken: string, userData: User) => {
     token.value = authToken
     user.value = userData
     isAdmin.value = userData.isAdmin || userData.loginId === 'admin'
     
-    console.log('Setting auth data:', {
+    console.log('🔐 Setting auth data:', {
       token: authToken ? `${authToken.substring(0, 20)}...` : null,
       user: userData,
       isAdmin: isAdmin.value
@@ -39,8 +40,12 @@ export const useAuthStore = defineStore('auth', () => {
         window.__authToken = authToken
       }
       
-      console.log('Auth data stored to secure storage')
+      console.log('📱 Auth data stored to secure storage')
     }
+    
+    // Force reactive update for admin UI elements
+    await nextTick()
+    console.log('✅ Auth reactive update completed. Admin status:', isAdmin.value)
   }
 
   const clearAuth = () => {
@@ -63,8 +68,9 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const initAuth = async () => {
-    if (process.client) {
+    if (process.client && !isInitialized.value) {
       isLoading.value = true
+      console.log('🔧 Starting auth initialization...')
       const storedToken = tokenManager.getAuthToken()
       const storedUser = tokenManager.getUserData()
       
@@ -94,7 +100,7 @@ export const useAuthStore = defineStore('auth', () => {
               user.value = storedUser
               
               // 管理者権限を確認（storedUserのloginIdで判定）
-              isAdmin.value = storedUser.loginId === 'admin'
+              isAdmin.value = storedUser.loginId === 'admin' || storedUser.isAdmin === true
               
               // Global access for API client
               if (typeof window !== 'undefined') {
@@ -106,6 +112,9 @@ export const useAuthStore = defineStore('auth', () => {
                 loginId: storedUser.loginId,
                 isAdmin: isAdmin.value 
               })
+              
+              // 管理者権限を即座に反映させるため、強制的に再描画
+              await nextTick()
             } else {
               // トークンが無効な場合
               console.warn('Token validation failed')
@@ -164,7 +173,7 @@ export const useAuthStore = defineStore('auth', () => {
               console.log('🔨 Constructed user data:', userData)
               
               user.value = userData
-              isAdmin.value = userData.loginId === 'admin'
+              isAdmin.value = userData.loginId === 'admin' || userData.isAdmin === true
               
               // Global access for API client
               if (typeof window !== 'undefined') {
@@ -178,6 +187,9 @@ export const useAuthStore = defineStore('auth', () => {
               }
               
               console.log('✅ Successfully restored user data from API:', userData)
+              
+              // 管理者権限を即座に反映させるため、強制的に再描画
+              await nextTick()
             } else {
               console.warn('❌ Failed to retrieve user data from API - invalid response')
               console.log('Response details:', { isValid: response.isValid, hasClaims: !!response.claims })
@@ -199,6 +211,8 @@ export const useAuthStore = defineStore('auth', () => {
       }
       
       isLoading.value = false
+      isInitialized.value = true
+      console.log('✅ Auth initialization completed')
     }
   }
 
@@ -209,15 +223,24 @@ export const useAuthStore = defineStore('auth', () => {
     await navigateTo('/login')
   }
 
+  // Auto-initialize auth when store is first accessed
+  const ensureInitialized = async () => {
+    if (!isInitialized.value && process.client) {
+      await initAuth()
+    }
+  }
+
   return {
     token,
     user,
     isLoading,
     isAdmin,
     isAuthenticated,
+    isInitialized,
     setAuth,
     clearAuth,
     initAuth,
-    logout
+    logout,
+    ensureInitialized
   }
 })

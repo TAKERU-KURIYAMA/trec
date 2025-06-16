@@ -4,7 +4,7 @@
 # Password: Test123!
 # SHA256("Test123!") = c775e7b757ede630cd0aa1113bd102661ab38829ca52a6422ab782862f268646
 
-API_URL="http://localhost:5001/api/auth/register"
+API_URL="http://local-trecplans/api/auth/register"
 PASSWORD_HASH="c775e7b757ede630cd0aa1113bd102661ab38829ca52a6422ab782862f268646"
 
 echo "Creating test users with password: Test123!"

@@ -50,12 +50,24 @@
           </button>
         </div>
 
-        <div v-else class="menus-grid">
+        <div v-else class="menus-groups">
           <div
-            v-for="menu in menus"
-            :key="menu.menu_id"
-            class="menu-card"
+            v-for="(group, groupKey) in menuGroups"
+            :key="groupKey"
+            class="menu-group"
           >
+            <div class="group-header">
+              <Icon :name="group.icon" size="24" />
+              <h3>{{ group.name }}</h3>
+              <span class="group-count">{{ group.menus.length }}個</span>
+            </div>
+            
+            <div class="menus-grid">
+              <div
+                v-for="menu in group.menus"
+                :key="menu.menu_id"
+                class="menu-card"
+              >
             <div class="menu-header">
               <h3>{{ menu.menu_name }}</h3>
               <div class="menu-actions">
@@ -109,6 +121,8 @@
                   {{ formatDate(menu.created_at) }}
                 </span>
               </div>
+            </div>
+          </div>
             </div>
           </div>
         </div>
@@ -419,13 +433,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from '~/stores/auth'
 import { apiClient } from '~/utils/api-client'
 
 // 管理者権限が必要なページ
 definePageMeta({
-  middleware: 'auth'
+  middleware: 'admin'
 })
 
 const authStore = useAuthStore()
@@ -434,6 +448,49 @@ const authStore = useAuthStore()
 const loading = ref(false)
 const error = ref('')
 const menus = ref([])
+
+// 部位ごとのグループ分け
+const menuGroups = computed(() => {
+  const groups = {
+    chest: { name: '胸', icon: 'mdi:arm-flex', menus: [] },
+    back: { name: '背中', icon: 'mdi:human-handsup', menus: [] },
+    shoulders: { name: '肩', icon: 'mdi:weight-lifter', menus: [] },
+    arms: { name: '腕', icon: 'mdi:arm-flex-outline', menus: [] },
+    legs: { name: '脚', icon: 'mdi:run', menus: [] },
+    abs: { name: '腹筋', icon: 'mdi:ab-testing', menus: [] },
+    others: { name: 'その他', icon: 'mdi:dots-horizontal', menus: [] }
+  }
+  
+  menus.value.forEach(menu => {
+    const menuId = menu.menu_id.toLowerCase()
+    const menuName = menu.menu_name.toLowerCase()
+    
+    // メニューIDやメニュー名から部位を判定
+    if (menuId.includes('chest') || menuId.includes('bench') || menuName.includes('胸') || menuName.includes('ベンチ')) {
+      groups.chest.menus.push(menu)
+    } else if (menuId.includes('back') || menuId.includes('lat') || menuId.includes('row') || menuName.includes('背') || menuName.includes('ラット')) {
+      groups.back.menus.push(menu)
+    } else if (menuId.includes('shoulder') || menuId.includes('delt') || menuName.includes('肩') || menuName.includes('ショルダー')) {
+      groups.shoulders.menus.push(menu)
+    } else if (menuId.includes('arm') || menuId.includes('bicep') || menuId.includes('tricep') || menuId.includes('curl') || menuName.includes('腕') || menuName.includes('カール')) {
+      groups.arms.menus.push(menu)
+    } else if (menuId.includes('leg') || menuId.includes('squat') || menuId.includes('calf') || menuName.includes('脚') || menuName.includes('スクワット')) {
+      groups.legs.menus.push(menu)
+    } else if (menuId.includes('ab') || menuId.includes('core') || menuName.includes('腹') || menuName.includes('コア')) {
+      groups.abs.menus.push(menu)
+    } else {
+      groups.others.menus.push(menu)
+    }
+  })
+  
+  // 空のグループを除外
+  return Object.entries(groups)
+    .filter(([key, group]) => group.menus.length > 0)
+    .reduce((acc, [key, group]) => {
+      acc[key] = group
+      return acc
+    }, {})
+})
 
 // モーダル状態
 const showCreateModal = ref(false)
@@ -514,8 +571,12 @@ const createMenu = async () => {
       description: newMenu.value.description || null
     })
     
-    await loadMenus() // メニューリストを再読み込み
+    // キャッシュを無効化してから再読み込み
+    apiClient.invalidateCache('/api/admin/menus')
+    
     closeCreateModal()
+    console.log('メニュー作成成功:', response)
+    await loadMenus() // メニューリストを再読み込み
   } catch (err) {
     console.error('メニュー作成エラー:', err)
     createError.value = err.response?.data?.userMessage || 'メニューの作成に失敗しました'
@@ -557,6 +618,9 @@ const updateMenu = async () => {
       description: editForm.value.description || null
     })
     
+    // キャッシュを無効化してから再読み込み
+    apiClient.invalidateCache('/api/admin/menus')
+    
     await loadMenus() // メニューリストを再読み込み
     closeEditModal()
   } catch (err) {
@@ -585,6 +649,10 @@ const confirmDelete = async () => {
   
   try {
     await apiClient.delete(`/api/admin/menus/${deletingMenu.value.menu_id}`)
+    
+    // キャッシュを無効化してから再読み込み
+    apiClient.invalidateCache('/api/admin/menus')
+    
     await loadMenus() // メニューリストを再読み込み
     closeDeleteModal()
   } catch (err) {
@@ -634,6 +702,9 @@ const updateMenuTags = async () => {
     await apiClient.put(`/api/admin/menus/${editingMenuForTags.value.menu_id}/tags`, {
       tagIds: selectedTagIds.value
     })
+    
+    // キャッシュを無効化してから再読み込み
+    apiClient.invalidateCache('/api/admin/menus')
     
     await loadMenus() // メニューリストを再読み込み
     closeTagsModal()
@@ -783,11 +854,53 @@ useHead({
   margin-bottom: 16px;
 }
 
+/* メニューグループ */
+.menus-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.menu-group {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fafafa;
+}
+
+.group-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.group-header h3 {
+  margin: 0;
+  color: #1f2937;
+  font-size: 1.25rem;
+  font-weight: 600;
+  flex: 1;
+}
+
+.group-count {
+  background: #3b82f6;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
 /* メニューグリッド */
 .menus-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: 20px;
+  padding: 20px;
+  background: white;
 }
 
 .menu-card {

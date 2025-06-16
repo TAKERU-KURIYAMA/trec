@@ -484,8 +484,19 @@ function editPreset(preset: TrainingPreset) {
 
 function deletePreset(preset: TrainingPreset) {
   if (confirm(`「${preset.name}」を削除しますか？この操作は取り消せません。`)) {
-    // TODO: Implement delete functionality
-    notifications.info('削除予定', 'プリセット削除機能は実装予定です')
+    try {
+      // Remove from local state (since backend only has dummy data)
+      const index = presets.value.findIndex(p => p.presetId === preset.presetId)
+      if (index !== -1) {
+        presets.value.splice(index, 1)
+        notifications.success('削除完了', `「${preset.name}」を削除しました`)
+      } else {
+        throw new Error('プリセットが見つかりませんでした')
+      }
+    } catch (err: any) {
+      console.error('Delete error:', err)
+      notifications.error('削除エラー', '削除中にエラーが発生しました')
+    }
   }
 }
 

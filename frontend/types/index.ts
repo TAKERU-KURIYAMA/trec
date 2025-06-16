@@ -312,6 +312,8 @@ export interface FilterConditions {
 export interface TrainingCardProps {
   /** トレーニングメニュー */
   menu: TrainingMenu
+  /** タグリスト */
+  tags?: TrainingTag[]
   /** クリック可能かどうか */
   clickable?: boolean
   /** 表示サイズ */

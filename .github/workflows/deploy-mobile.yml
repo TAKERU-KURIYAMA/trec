@@ -1,0 +1,262 @@
+name: Deploy Mobile App
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'mobile-app/**'
+      - '.github/workflows/deploy-mobile.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'mobile-app/**'
+
+env:
+  NODE_VERSION: '18'
+  JAVA_VERSION: '17'
+  DEPLOYMENT_ENV: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+
+jobs:
+  test:
+    name: Test Mobile App
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./mobile-app/TrecPlans
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'mobile-app/TrecPlans/package-lock.json'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Run tests
+        run: npm run test
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    defaults:
+      run:
+        working-directory: ./mobile-app/TrecPlans
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'mobile-app/TrecPlans/package-lock.json'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create env file
+        run: |
+          cat > .env << EOF
+          API_BASE_URL=${{ secrets.API_BASE_URL }}
+          APP_ENV=${{ env.DEPLOYMENT_ENV }}
+          EOF
+
+      - name: Clean project
+        run: |
+          cd android
+          ./gradlew clean
+
+      - name: Build Android Release APK
+        run: |
+          cd android
+          ./gradlew assembleRelease
+
+      - name: Sign APK
+        uses: r0adkll/sign-android-release@v1
+        id: sign_app
+        with:
+          releaseDirectory: mobile-app/TrecPlans/android/app/build/outputs/apk/release
+          signingKeyBase64: ${{ secrets.ANDROID_SIGNING_KEY }}
+          alias: ${{ secrets.ANDROID_KEY_ALIAS }}
+          keyStorePassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyPassword: ${{ secrets.ANDROID_KEY_PASSWORD }}
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: mobile-app/TrecPlans/android/app/build/outputs/apk/release/
+          retention-days: 30
+
+  build-ios:
+    name: Build iOS IPA
+    runs-on: macos-latest
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    defaults:
+      run:
+        working-directory: ./mobile-app/TrecPlans
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'mobile-app/TrecPlans/package-lock.json'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Install CocoaPods
+        run: |
+          cd ios
+          pod install
+
+      - name: Create env file
+        run: |
+          cat > .env << EOF
+          API_BASE_URL=${{ secrets.API_BASE_URL }}
+          APP_ENV=${{ env.DEPLOYMENT_ENV }}
+          EOF
+
+      - name: Build iOS
+        run: |
+          cd ios
+          xcodebuild \
+            -workspace TrecPlans.xcworkspace \
+            -scheme TrecPlans \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath TrecPlans.xcarchive \
+            archive
+
+      - name: Export IPA
+        run: |
+          cd ios
+          xcodebuild \
+            -exportArchive \
+            -archivePath TrecPlans.xcarchive \
+            -exportPath ./build \
+            -exportOptionsPlist ExportOptions.plist
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-ipa
+          path: mobile-app/TrecPlans/ios/build/
+          retention-days: 30
+
+  deploy-android:
+    name: Deploy to Google Play Store
+    runs-on: ubuntu-latest
+    needs: build-android
+    if: github.ref == 'refs/heads/main'
+    environment: production
+
+    steps:
+      - name: Download APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: android-apk
+          path: ./apk/
+
+      - name: Deploy to Google Play Store
+        uses: r0adkll/upload-google-play@v1.1.3
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT }}
+          packageName: com.message.trecplans
+          releaseFiles: ./apk/app-release-signed.apk
+          track: internal  # internal, alpha, beta, production
+          status: completed
+          inAppUpdatePriority: 2
+          userFraction: 0.1  # Gradual rollout
+
+  deploy-ios:
+    name: Deploy to App Store
+    runs-on: macos-latest
+    needs: build-ios
+    if: github.ref == 'refs/heads/main'
+    environment: production
+
+    steps:
+      - name: Download IPA artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ios-ipa
+          path: ./ipa/
+
+      - name: Deploy to App Store
+        run: |
+          xcrun altool \
+            --upload-app \
+            --type ios \
+            --file ./ipa/TrecPlans.ipa \
+            --username ${{ secrets.APPLE_ID_USERNAME }} \
+            --password ${{ secrets.APPLE_ID_PASSWORD }}
+
+  notify:
+    name: Notify Deployment
+    runs-on: ubuntu-latest
+    needs: [deploy-android, deploy-ios]
+    if: always() && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Notify deployment success
+        if: needs.deploy-android.result == 'success' || needs.deploy-ios.result == 'success'
+        uses: 8398a7/action-slack@v3
+        with:
+          status: success
+          channel: '#deployments'
+          text: |
+            🚀 Mobile app deployment completed!
+            Android: ${{ needs.deploy-android.result }}
+            iOS: ${{ needs.deploy-ios.result }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Notify deployment failure
+        if: needs.deploy-android.result == 'failure' || needs.deploy-ios.result == 'failure'
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          channel: '#deployments'
+          text: |
+            ❌ Mobile app deployment failed!
+            Android: ${{ needs.deploy-android.result }}
+            iOS: ${{ needs.deploy-ios.result }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

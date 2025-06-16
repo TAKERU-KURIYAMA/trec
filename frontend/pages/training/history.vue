@@ -351,6 +351,7 @@ import { useTrainingHistory, type TrainingHistoryRecord, type HistoryFilters } f
 import { useNotifications } from '~/composables/useNotifications'
 import { useAuthStore } from '~/stores/auth'
 import { globalAuthModal } from '~/composables/useAuthModal'
+import { useApiClient } from '~/utils/api-client'
 
 // ===================================
 // Setup and Dependencies
@@ -486,9 +487,22 @@ async function saveEdits() {
   try {
     saving.value = true
     
-    // TODO: Implement API call to update today's training record
-    // For now, simulate success
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    // Prepare the request data in the same format as creating a new record
+    const requestData = {
+      menuId: selectedRecord.value.menuId,
+      trainingDate: selectedRecord.value.trainingDate,
+      sets: editableSets.value.map((set, index) => ({
+        setNumber: index + 1,
+        reps: set.reps,
+        weight: set.weight,
+        note: set.note || ''
+      }))
+    }
+    
+    // Call the API to update the training record
+    // The backend's CreateOrUpdateDailyRecord method will handle the update
+    const { training } = useApiClient()
+    await training.createTrainingRecord(requestData)
     
     // Update the current details with edited data
     if (currentDetails.value) {

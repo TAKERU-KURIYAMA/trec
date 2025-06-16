@@ -121,23 +121,14 @@ function handleClick() {
 
 /**
  * タグIDからタグ名を取得
- * TODO: 実際の実装では、タグマスターから名前を取得
  */
 function getTagName(tagId: string): string {
-  // 簡単なマッピング（実際は親コンポーネントから渡すか、ストアから取得）
-  const tagNameMap: Record<string, string> = {
-    'upper_body': '上半身',
-    'lower_body': '下半身',
-    'cardio': '有酸素',
-    'core': 'コア',
-    'chest': '胸',
-    'back': '背中',
-    'shoulders': '肩',
-    'arms': '腕',
-    'legs': '脚',
-    'abs': '腹筋'
+  // propsからタグ情報を取得
+  if (props.tags && props.tags.length > 0) {
+    const tag = props.tags.find(t => t.tagId === tagId)
+    return tag?.jpName || tagId
   }
-  return tagNameMap[tagId] || tagId
+  return tagId
 }
 
 /**
