@@ -13,7 +13,7 @@ echo
 SERVER=${DB_SERVER:-localhost}
 USERNAME=${DB_USERNAME:-sa}
 PASSWORD=${DB_PASSWORD:-Your_password123}
-DATABASE=${DB_DATABASE:-MessageRDB}
+DATABASE=${DB_DATABASE:-TrecPlansRDB}
 CONTAINER_NAME=${DB_CONTAINER:-message_db_1}
 
 echo "データベース: $DATABASE"

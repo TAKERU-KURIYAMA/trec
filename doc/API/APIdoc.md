@@ -1,6 +1,6 @@
-# 📋 Message Training API 設計書
+# 📋 TrecPlans Training API 設計書
 
-このドキュメントは、Message Training アプリケーションのAPI設計と仕様を包括的に記載したものです。
+このドキュメントは、TrecPlans Training アプリケーションのAPI設計と仕様を包括的に記載したものです。
 
 ## 📚 目次
 
@@ -16,7 +16,7 @@
 
 ## 🎯 概要
 
-Message Training API は、フィットネス・トレーニング管理アプリケーション向けのREST APIです。ユーザー認証、トレーニングメニュー管理、トレーニング記録の追跡機能を提供します。
+TrecPlans Training API は、フィットネス・トレーニング管理アプリケーション向けのREST APIです。ユーザー認証、トレーニングメニュー管理、トレーニング記録の追跡機能を提供します。
 
 ### 主要機能
 - ユーザー認証とJWTトークン管理

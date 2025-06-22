@@ -14,14 +14,14 @@ namespace API.Controllers
     [Route("training")]
     public class TrainingController : BaseController
     {
-        private readonly MessageRDBContext _context;
+        private readonly TrecPlansRDBContext _context;
 
         /// <summary>
         /// TrainingControllerのコンストラクタ
         /// </summary>
         /// <param name="logger">ロガー</param>
         /// <param name="context">データベースコンテキスト</param>
-        public TrainingController(ILogger<TrainingController> logger, MessageRDBContext context)
+        public TrainingController(ILogger<TrainingController> logger, TrecPlansRDBContext context)
             : base(logger)
         {
             _context = context;

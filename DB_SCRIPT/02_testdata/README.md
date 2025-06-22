@@ -73,7 +73,7 @@ curl -X POST "http://local-trecplans/api/account/user" \
 ```sql
 -- SQL Server Management Studio (SSMS) で実行
 -- または sqlcmd で実行
-sqlcmd -S localhost,1433 -U sa -P Your_password123 -d MessageRDB -i execute_all_testdata.sql
+sqlcmd -S localhost,1433 -U sa -P Your_password123 -d TrecPlansRDB -i execute_all_testdata.sql
 ```
 
 **Windows環境（バッチスクリプト）:**
@@ -93,7 +93,7 @@ execute_all_testdata.bat
 DB_SERVER=localhost \
 DB_USERNAME=sa \
 DB_PASSWORD=Your_password123 \
-DB_DATABASE=MessageRDB \
+DB_DATABASE=TrecPlansRDB \
 DB_CONTAINER=message_db_1 \
 ./execute_all_testdata.sh
 ```
@@ -101,7 +101,7 @@ DB_CONTAINER=message_db_1 \
 ### SQL Server Management Studio (SSMS) での実行
 ```sql
 -- データベースに接続後、各スクリプトを順番に実行
-USE MessageRDB;
+USE TrecPlansRDB;
 GO
 
 -- 各スクリプトを開いて実行
@@ -113,7 +113,7 @@ GO
 docker exec -it <container_name> /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P Your_password123
 
 # 各スクリプトを実行
-1> USE MessageRDB;
+1> USE TrecPlansRDB;
 2> GO
 1> :r /path/to/01_insert_menus_and_tags.sql
 2> GO
@@ -122,18 +122,18 @@ docker exec -it <container_name> /opt/mssql-tools/bin/sqlcmd -S localhost -U sa 
 ### コマンドラインからの一括実行
 ```bash
 # Windows
-sqlcmd -S localhost,1433 -U sa -P Your_password123 -d MessageRDB -i 01_insert_menus_and_tags.sql
-sqlcmd -S localhost,1433 -U sa -P Your_password123 -d MessageRDB -i 02_insert_test_users.sql
-sqlcmd -S localhost,1433 -U sa -P Your_password123 -d MessageRDB -i 03_insert_sample_training_data.sql
-sqlcmd -S localhost,1433 -U sa -P Your_password123 -d MessageRDB -i 04_insert_additional_features.sql
-sqlcmd -S localhost,1433 -U sa -P Your_password123 -d MessageRDB -i 05_add_exercise_type_tags.sql
+sqlcmd -S localhost,1433 -U sa -P Your_password123 -d TrecPlansRDB -i 01_insert_menus_and_tags.sql
+sqlcmd -S localhost,1433 -U sa -P Your_password123 -d TrecPlansRDB -i 02_insert_test_users.sql
+sqlcmd -S localhost,1433 -U sa -P Your_password123 -d TrecPlansRDB -i 03_insert_sample_training_data.sql
+sqlcmd -S localhost,1433 -U sa -P Your_password123 -d TrecPlansRDB -i 04_insert_additional_features.sql
+sqlcmd -S localhost,1433 -U sa -P Your_password123 -d TrecPlansRDB -i 05_add_exercise_type_tags.sql
 
 # Linux/Mac (Docker環境)
-docker exec -i message_db_1 /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P Your_password123 -d MessageRDB < 01_insert_menus_and_tags.sql
-docker exec -i message_db_1 /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P Your_password123 -d MessageRDB < 02_insert_test_users.sql
-docker exec -i message_db_1 /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P Your_password123 -d MessageRDB < 03_insert_sample_training_data.sql
-docker exec -i message_db_1 /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P Your_password123 -d MessageRDB < 04_insert_additional_features.sql
-docker exec -i message_db_1 /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P Your_password123 -d MessageRDB < 05_add_exercise_type_tags.sql
+docker exec -i message_db_1 /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P Your_password123 -d TrecPlansRDB < 01_insert_menus_and_tags.sql
+docker exec -i message_db_1 /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P Your_password123 -d TrecPlansRDB < 02_insert_test_users.sql
+docker exec -i message_db_1 /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P Your_password123 -d TrecPlansRDB < 03_insert_sample_training_data.sql
+docker exec -i message_db_1 /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P Your_password123 -d TrecPlansRDB < 04_insert_additional_features.sql
+docker exec -i message_db_1 /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P Your_password123 -d TrecPlansRDB < 05_add_exercise_type_tags.sql
 ```
 
 ## 投入されるデータ

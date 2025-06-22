@@ -1,4 +1,4 @@
-# Message システムシーケンス図
+# TrecPlans システムシーケンス図
 
 ## 1. 認証関連フロー
 
@@ -528,9 +528,129 @@ sequenceDiagram
     end
 ```
 
-## 6. エラーハンドリングフロー
+## 6. サプリメント管理フロー
 
-### 6.1 API エラーハンドリング
+### 6.1 サプリメント登録フロー
+
+```mermaid
+sequenceDiagram
+    actor User as ユーザー
+    participant UI as フロントエンド
+    participant API as APIサーバー
+    participant DB as Database
+
+    User->>UI: サプリメント追加ボタン
+    UI->>User: 登録フォーム表示
+    User->>UI: サプリメント情報入力
+    Note right of User: 名前、単位、説明
+    User->>UI: 保存ボタン
+    
+    UI->>API: POST /api/supplement/supplements
+    API->>DB: サプリメント保存
+    DB-->>API: 保存完了
+    API-->>UI: 201 Created
+    UI->>UI: サプリメント一覧更新
+    UI->>User: 登録完了通知
+```
+
+### 6.2 摂取記録登録フロー
+
+```mermaid
+sequenceDiagram
+    actor User as ユーザー
+    participant UI as フロントエンド
+    participant API as APIサーバー
+    participant DB as Database
+    participant Notif as 通知システム
+
+    User->>UI: 摂取記録追加ボタン
+    UI->>API: GET /api/supplement/supplements
+    API->>DB: サプリメント一覧取得
+    DB-->>API: サプリメントリスト
+    API-->>UI: サプリメント選択肢
+    
+    UI->>User: 摂取記録フォーム表示
+    User->>UI: 摂取情報入力
+    Note right of User: サプリ、日時、量、タイミング
+    User->>UI: 保存ボタン
+    
+    UI->>API: POST /api/supplement/intakes
+    API->>DB: 摂取記録保存
+    DB-->>API: 保存完了
+    API-->>UI: 201 Created
+    
+    UI->>UI: 記録一覧更新
+    UI->>Notif: 摂取記録完了通知
+    Notif->>User: 完了メッセージ表示
+```
+
+### 6.3 スケジュール管理フロー
+
+```mermaid
+sequenceDiagram
+    actor User as ユーザー
+    participant UI as フロントエンド
+    participant API as APIサーバー
+    participant Schedule as スケジューラー
+    participant DB as Database
+    participant Notif as 通知システム
+
+    User->>UI: スケジュール作成ボタン
+    UI->>API: GET /api/supplement/supplements
+    API-->>UI: サプリメント一覧
+    
+    UI->>User: スケジュール設定フォーム
+    User->>UI: スケジュール情報入力
+    Note right of User: サプリ、時間、曜日、量
+    User->>UI: 保存ボタン
+    
+    UI->>API: POST /api/supplement/schedules
+    API->>DB: スケジュール保存
+    DB-->>API: 保存完了
+    API->>Schedule: スケジュール登録
+    API-->>UI: 201 Created
+    
+    UI->>User: スケジュール一覧更新
+    
+    Note over Schedule: 定期実行
+    Schedule->>Notif: 摂取時間通知
+    Notif->>User: スケジュール通知
+```
+
+### 6.4 摂取記録確認・統計フロー
+
+```mermaid
+sequenceDiagram
+    actor User as ユーザー
+    participant UI as フロントエンド
+    participant API as APIサーバー
+    participant Stats as 統計サービス
+    participant DB as Database
+
+    User->>UI: 摂取記録画面アクセス
+    User->>UI: 日付選択
+    
+    UI->>API: GET /api/supplement/intakes?date=2024-01-15
+    API->>DB: 指定日の摂取記録取得
+    DB-->>API: 摂取記録リスト
+    API-->>UI: 摂取記録データ
+    
+    UI->>User: 日別摂取記録表示
+    
+    User->>UI: 統計表示要求
+    UI->>API: GET /api/supplement/stats
+    API->>Stats: 統計計算
+    Stats->>DB: 集計クエリ実行
+    DB-->>Stats: 集計結果
+    Stats-->>API: 統計データ
+    API-->>UI: 統計情報
+    
+    UI->>User: 摂取統計・グラフ表示
+```
+
+## 7. エラーハンドリングフロー
+
+### 7.1 API エラーハンドリング
 
 ```mermaid
 sequenceDiagram
@@ -583,4 +703,4 @@ sequenceDiagram
     end
 ```
 
-これらのシーケンス図は、Messageシステムの主要な業務フローを詳細に示しています。各フローは実際の実装に基づいており、エラーハンドリングやオフライン対応なども含まれています。
+これらのシーケンス図は、TrecPlansシステムの主要な業務フローを詳細に示しています。各フローは実際の実装に基づいており、エラーハンドリングやオフライン対応、そして新たに追加されたサプリメント管理機能も含まれています。

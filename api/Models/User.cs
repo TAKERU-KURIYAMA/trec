@@ -28,4 +28,10 @@ public partial class User
     public virtual ICollection<UserDatum> UserData { get; set; } = new List<UserDatum>();
 
     public virtual ICollection<UserToken> UserTokens { get; set; } = new List<UserToken>();
+
+    public virtual ICollection<SupplementMaster> SupplementMasters { get; set; } = new List<SupplementMaster>();
+
+    public virtual ICollection<SupplementIntakeRecord> SupplementIntakeRecords { get; set; } = new List<SupplementIntakeRecord>();
+
+    public virtual ICollection<SupplementSchedule> SupplementSchedules { get; set; } = new List<SupplementSchedule>();
 }

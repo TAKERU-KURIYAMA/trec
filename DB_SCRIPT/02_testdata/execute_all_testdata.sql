@@ -6,7 +6,7 @@
 -- 使用方法:
 -- 1. SQL Server Management Studio (SSMS) で実行
 -- 2. または sqlcmd コマンドで実行:
---    sqlcmd -S localhost,1433 -U sa -P Your_password123 -d MessageRDB -i execute_all_testdata.sql
+--    sqlcmd -S localhost,1433 -U sa -P Your_password123 -d TrecPlansRDB -i execute_all_testdata.sql
 -- ===================================
 
 PRINT '===================================';
@@ -15,7 +15,7 @@ PRINT '===================================';
 PRINT '';
 
 -- データベースの使用
-USE MessageRDB;
+USE TrecPlansRDB;
 GO
 
 -- ===================================

@@ -14,9 +14,9 @@ namespace API.Controllers
     [Route("admin")]
     public class AdminController : BaseController
     {
-        private readonly MessageRDBContext _context;
+        private readonly TrecPlansRDBContext _context;
 
-        public AdminController(ILogger<AdminController> logger, MessageRDBContext context)
+        public AdminController(ILogger<AdminController> logger, TrecPlansRDBContext context)
             : base(logger)
         {
             _context = context;

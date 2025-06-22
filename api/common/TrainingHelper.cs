@@ -18,7 +18,7 @@ namespace Api.Common
         /// <param name="menuId">検証するメニューID</param>
         /// <returns>トレーニングメニュー情報</returns>
         /// <exception cref="AppException">メニューが存在しない場合</exception>
-        public static TrainingMenu ValidateMenuId(MessageRDBContext context, string menuId)
+        public static TrainingMenu ValidateMenuId(TrecPlansRDBContext context, string menuId)
         {
             if (context == null) 
                 throw new ArgumentNullException(nameof(context));
@@ -46,7 +46,7 @@ namespace Api.Common
         /// <param name="menuId">検証するメニューID</param>
         /// <returns>トレーニングメニュー情報</returns>
         /// <exception cref="AppException">メニューが存在しない場合</exception>
-        public static async Task<TrainingMenu> ValidateMenuIdAsync(MessageRDBContext context, string menuId)
+        public static async Task<TrainingMenu> ValidateMenuIdAsync(TrecPlansRDBContext context, string menuId)
         {
             if (context == null) 
                 throw new ArgumentNullException(nameof(context));
@@ -76,7 +76,7 @@ namespace Api.Common
         /// <param name="menu">トレーニングメニュー情報</param>
         /// <returns>集計後のデイリートレーニングレコード</returns>
         public static DailyTrainingRecord AggregateDailyTrainingRecord(
-            MessageRDBContext context, 
+            TrecPlansRDBContext context, 
             DateOnly date, 
             User user, 
             TrainingMenu menu)
@@ -166,7 +166,7 @@ namespace Api.Common
         /// <param name="menu">トレーニングメニュー情報</param>
         /// <returns>集計後のデイリートレーニングレコード</returns>
         public static async Task<DailyTrainingRecord> AggregateDailyTrainingRecordAsync(
-            MessageRDBContext context, 
+            TrecPlansRDBContext context, 
             DateOnly date, 
             User user, 
             TrainingMenu menu)
@@ -248,7 +248,7 @@ namespace Api.Common
         /// <param name="menuId">メニューID（任意、指定時は特定メニューのみ）</param>
         /// <returns>期間内のデイリートレーニングレコードリスト</returns>
         public static async Task<List<DailyTrainingRecord>> GetTrainingHistoryAsync(
-            MessageRDBContext context,
+            TrecPlansRDBContext context,
             string userCommonId,
             DateOnly startDate,
             DateOnly endDate,
@@ -285,7 +285,7 @@ namespace Api.Common
         /// <param name="days">過去何日分の統計を取得するか（デフォルト: 30日）</param>
         /// <returns>メニューごとの使用回数</returns>
         public static async Task<Dictionary<string, int>> GetMenuUsageStatsAsync(
-            MessageRDBContext context,
+            TrecPlansRDBContext context,
             string userCommonId,
             int days = 30)
         {

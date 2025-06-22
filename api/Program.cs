@@ -110,7 +110,7 @@ try
     var serverName = ExtractServerName(connectionString);
     logger.LogInformation("データベース接続設定完了 - Server: {ServerName}", serverName);
 
-    builder.Services.AddDbContext<MessageRDBContext>(options =>
+    builder.Services.AddDbContext<TrecPlansRDBContext>(options =>
     {
         options.UseSqlServer(connectionString, sqlOptions =>
         {
@@ -253,7 +253,7 @@ try
     if (app.Environment.IsDevelopment())
     {
         using var scope = app.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<MessageRDBContext>();
+        var context = scope.ServiceProvider.GetRequiredService<TrecPlansRDBContext>();
         
         try
         {

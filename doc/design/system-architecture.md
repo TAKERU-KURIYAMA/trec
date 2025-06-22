@@ -91,7 +91,7 @@
                                            │ ・User          │
                                            │ ・TrainingMenu  │
                                            │ ・TrainingRecord│
-                                           │ ・MessageRDBCtx │
+                                           │ ・TrecPlansRDBCtx │
                                            │                 │
                                            │ Common:         │
                                            │ ・Logger        │

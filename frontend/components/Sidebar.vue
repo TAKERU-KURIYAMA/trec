@@ -77,6 +77,16 @@
           <Icon name="mdi:calendar-month" />
           <span>予定</span>
         </NuxtLink>
+        
+        <NuxtLink 
+          to="/supplements" 
+          class="nav-item"
+          :class="{ active: $route.path.includes('/supplements') }"
+          @click="closeSidebarOnMobile"
+        >
+          <Icon name="mdi:pill" />
+          <span>サプリメント</span>
+        </NuxtLink>
       </div>
 
       <!-- Admin Section (only visible to admin and after auth loading) -->

@@ -12,18 +12,18 @@ namespace Api.Tests.Controllers
 {
     public class TrainingControllerTests : IDisposable
     {
-        private readonly MessageRDBContext _context;
+        private readonly TrecPlansRDBContext _context;
         private readonly Mock<ILogger<TrainingController>> _mockLogger;
         private readonly TrainingController _controller;
 
         public TrainingControllerTests()
         {
             // Setup in-memory database
-            var options = new DbContextOptionsBuilder<MessageRDBContext>()
+            var options = new DbContextOptionsBuilder<TrecPlansRDBContext>()
                 .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
                 .Options;
 
-            _context = new MessageRDBContext(options);
+            _context = new TrecPlansRDBContext(options);
             _mockLogger = new Mock<ILogger<TrainingController>>();
             _controller = new TrainingController(_mockLogger.Object, _context);
 
@@ -163,11 +163,11 @@ namespace Api.Tests.Controllers
         public async Task GetMenu_ShouldReturnErrorResponse_WhenDatabaseConnectionFails()
         {
             // Arrange
-            var options = new DbContextOptionsBuilder<MessageRDBContext>()
+            var options = new DbContextOptionsBuilder<TrecPlansRDBContext>()
                 .UseInMemoryDatabase(databaseName: "FailingDb")
                 .Options;
 
-            using var failingContext = new MessageRDBContext(options);
+            using var failingContext = new TrecPlansRDBContext(options);
             failingContext.Database.EnsureDeleted(); // Ensure database doesn't exist
 
             var controller = new TrainingController(_mockLogger.Object, failingContext);
@@ -202,11 +202,11 @@ namespace Api.Tests.Controllers
         public async Task GetMenu_ShouldReturnEmptyCollections_WhenNoDataExists()
         {
             // Arrange
-            var options = new DbContextOptionsBuilder<MessageRDBContext>()
+            var options = new DbContextOptionsBuilder<TrecPlansRDBContext>()
                 .UseInMemoryDatabase(databaseName: "EmptyDb")
                 .Options;
 
-            using var emptyContext = new MessageRDBContext(options);
+            using var emptyContext = new TrecPlansRDBContext(options);
             var controller = new TrainingController(_mockLogger.Object, emptyContext);
 
             // Act

@@ -13,7 +13,7 @@ namespace Services;
 /// </summary>
 public class AuthService : IAuthService
 {
-    private readonly MessageRDBContext _dbContext;
+    private readonly TrecPlansRDBContext _dbContext;
     private readonly ILogger<AuthService> _logger;
 
     /// <summary>
@@ -21,7 +21,7 @@ public class AuthService : IAuthService
     /// </summary>
     /// <param name="dbContext">データベースコンテキスト</param>
     /// <param name="logger">ロガー</param>
-    public AuthService(MessageRDBContext dbContext, ILogger<AuthService> logger)
+    public AuthService(TrecPlansRDBContext dbContext, ILogger<AuthService> logger)
     {
         _dbContext = dbContext;
         _logger = logger;

@@ -1,4 +1,4 @@
-# Message API仕様書
+# TrecPlans API仕様書
 
 ## API概要
 
@@ -617,11 +617,286 @@ ws://api.example.com/ws/training
 }
 ```
 
+## サプリメント管理API
+
+### 1. サプリメント一覧取得
+
+```
+GET /api/supplement/supplements
+```
+
+認証: 必要
+
+#### レスポンス
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "supplementId": 1,
+      "supplementName": "プロテイン",
+      "unit": "g",
+      "description": "ホエイプロテイン"
+    },
+    {
+      "supplementId": 2,
+      "supplementName": "クレアチン",
+      "unit": "g",
+      "description": "筋力向上サプリ"
+    }
+  ]
+}
+```
+
+### 2. サプリメント登録
+
+```
+POST /api/supplement/supplements
+```
+
+認証: 必要
+
+#### リクエスト
+```json
+{
+  "supplementName": "BCAA",
+  "unit": "g",
+  "description": "分岐鎖アミノ酸"
+}
+```
+
+#### レスポンス
+```json
+{
+  "success": true,
+  "data": {
+    "supplementId": 3,
+    "supplementName": "BCAA",
+    "unit": "g",
+    "description": "分岐鎖アミノ酸"
+  }
+}
+```
+
+### 3. サプリメント更新
+
+```
+PUT /api/supplement/supplements/{id}
+```
+
+認証: 必要
+
+#### リクエスト
+```json
+{
+  "supplementName": "ホエイプロテイン",
+  "unit": "g",
+  "description": "高品質ホエイプロテイン"
+}
+```
+
+#### レスポンス
+```json
+{
+  "success": true,
+  "message": "サプリメントを更新しました"
+}
+```
+
+### 4. サプリメント削除
+
+```
+DELETE /api/supplement/supplements/{id}
+```
+
+認証: 必要
+
+#### レスポンス
+```json
+{
+  "success": true,
+  "message": "サプリメントを削除しました"
+}
+```
+
+### 5. 摂取記録取得
+
+```
+GET /api/supplement/intakes
+```
+
+認証: 必要
+
+#### クエリパラメータ
+
+| パラメータ | 型 | 必須 | 説明 |
+|-----------|-----|------|------|
+| date | string | × | 取得日（YYYY-MM-DD、デフォルト: 今日） |
+
+#### レスポンス
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "recordId": 1,
+      "supplementId": 1,
+      "supplementName": "プロテイン",
+      "unit": "g",
+      "intakeDate": "2024-01-15",
+      "intakeTime": "08:30:00",
+      "amount": 30,
+      "timingType": "朝食後",
+      "memo": "トレーニング後"
+    }
+  ]
+}
+```
+
+### 6. 摂取記録登録
+
+```
+POST /api/supplement/intakes
+```
+
+認証: 必要
+
+#### リクエスト
+```json
+{
+  "supplementId": 1,
+  "intakeDate": "2024-01-15",
+  "intakeTime": "08:30:00",
+  "amount": 30,
+  "timingType": "朝食後",
+  "memo": "トレーニング後"
+}
+```
+
+#### レスポンス
+```json
+{
+  "success": true,
+  "message": "摂取記録を保存しました",
+  "data": {
+    "recordId": 1,
+    "supplementId": 1,
+    "supplementName": "プロテイン",
+    "unit": "g",
+    "intakeDate": "2024-01-15",
+    "intakeTime": "08:30:00",
+    "amount": 30,
+    "timingType": "朝食後",
+    "memo": "トレーニング後"
+  }
+}
+```
+
+### 7. 摂取記録削除
+
+```
+DELETE /api/supplement/intakes/{id}
+```
+
+認証: 必要
+
+#### レスポンス
+```json
+{
+  "success": true,
+  "message": "摂取記録を削除しました"
+}
+```
+
+### 8. スケジュール一覧取得
+
+```
+GET /api/supplement/schedules
+```
+
+認証: 必要
+
+#### レスポンス
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "scheduleId": 1,
+      "supplementId": 1,
+      "supplementName": "プロテイン",
+      "unit": "g",
+      "scheduleTime": "08:30:00",
+      "amount": 30,
+      "timingType": "朝食後",
+      "daysOfWeek": "ALL",
+      "memo": "毎日摂取"
+    }
+  ]
+}
+```
+
+### 9. スケジュール作成
+
+```
+POST /api/supplement/schedules
+```
+
+認証: 必要
+
+#### リクエスト
+```json
+{
+  "supplementId": 1,
+  "scheduleTime": "08:30:00",
+  "amount": 30,
+  "timingType": "朝食後",
+  "daysOfWeek": "MON,WED,FRI",
+  "memo": "運動日のみ"
+}
+```
+
+#### レスポンス
+```json
+{
+  "success": true,
+  "message": "スケジュールを作成しました",
+  "data": {
+    "scheduleId": 1,
+    "supplementId": 1,
+    "supplementName": "プロテイン",
+    "unit": "g",
+    "scheduleTime": "08:30:00",
+    "amount": 30,
+    "timingType": "朝食後",
+    "daysOfWeek": "MON,WED,FRI",
+    "memo": "運動日のみ"
+  }
+}
+```
+
+### 10. スケジュール削除
+
+```
+DELETE /api/supplement/schedules/{id}
+```
+
+認証: 必要
+
+#### レスポンス
+```json
+{
+  "success": true,
+  "message": "スケジュールを削除しました"
+}
+```
+
 ## レート制限
 
 - 認証エンドポイント: 5リクエスト/分
 - 通常エンドポイント: 100リクエスト/分
 - 管理者エンドポイント: 30リクエスト/分
+- サプリメントエンドポイント: 60リクエスト/分
 
 レート制限に達した場合、以下のレスポンスヘッダーが返されます：
 ```

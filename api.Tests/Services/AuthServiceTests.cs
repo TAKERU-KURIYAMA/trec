@@ -8,16 +8,16 @@ namespace Api.Tests.Services
 {
     public class AuthServiceTests : IDisposable
     {
-        private readonly MessageRDBContext _context;
+        private readonly TrecPlansRDBContext _context;
         private readonly AuthService _authService;
 
         public AuthServiceTests()
         {
-            var options = new DbContextOptionsBuilder<MessageRDBContext>()
+            var options = new DbContextOptionsBuilder<TrecPlansRDBContext>()
                 .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
                 .Options;
 
-            _context = new MessageRDBContext(options);
+            _context = new TrecPlansRDBContext(options);
             var logger = new LoggerFactory().CreateLogger<AuthService>();
             _authService = new AuthService(_context, logger);
         }

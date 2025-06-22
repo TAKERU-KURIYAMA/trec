@@ -1,0 +1,25 @@
+{
+  "name": "message-docs",
+  "version": "1.0.0",
+  "description": "Message システム設計書ドキュメントサイト",
+  "type": "module",
+  "scripts": {
+    "docs:dev": "vitepress dev",
+    "docs:build": "vitepress build",
+    "docs:preview": "vitepress preview"
+  },
+  "keywords": [
+    "documentation",
+    "vitepress",
+    "design-docs"
+  ],
+  "author": "Message Team",
+  "license": "MIT",
+  "devDependencies": {
+    "vitepress": "^1.0.0-rc.31",
+    "vue": "^3.4.0"
+  },
+  "dependencies": {
+    "@vueuse/core": "^10.7.0"
+  }
+}

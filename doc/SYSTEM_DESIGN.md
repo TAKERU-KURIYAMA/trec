@@ -1,15 +1,15 @@
-# Message トレーニング管理システム設計書
+# TrecPlans トレーニング管理システム設計書
 
 ## 1. システム概要
 
 ### 1.1 プロジェクト概要
-「Message」は、トレーニング・ワークアウトを記録・管理するための総合的なフィットネス管理システムです。
+「TrecPlans」は、トレーニング・ワークアウトを記録・管理するための総合的なフィットネス管理システムです。
 
 ### 1.2 技術スタック
 - **フロントエンド**: Vue 3 + Nuxt 3 + TypeScript
 - **バックエンド**: ASP.NET Core 8.0 + Entity Framework Core
 - **モバイルアプリ**: React Native + TypeScript
-- **データベース**: PostgreSQL 15
+- **データベース**: SQL server 2022
 - **認証**: JWT (JSON Web Token)
 - **コンテナ**: Docker + Docker Compose
 - **CI/CD**: GitHub Actions
@@ -65,11 +65,19 @@
 ### 2.7 通知・フィードバック
 - トースト通知
 - ワークアウト通知
+- サプリメント摂取通知
 - 音声フィードバック（モバイル）
 - 振動フィードバック（モバイル）
 - 達成バッジ
 
-### 2.8 データ管理
+### 2.8 サプリメント管理
+- サプリメント登録・編集・削除
+- 摂取記録管理
+- 摂取スケジュール設定
+- 摂取統計・分析表示
+- 摂取リマインダー通知
+
+### 2.9 データ管理
 - オフラインデータ永続化
 - 自動同期
 - データエクスポート
@@ -94,8 +102,8 @@ graph TB
     end
     
     subgraph "Data Layer"
-        F[PostgreSQL<br/>Database]
-        G[Redis Cache<br/>Optional]
+        F[SQL Server
+        <br/>Database]
     end
     
     subgraph "External Services"
@@ -120,10 +128,16 @@ erDiagram
     Users ||--o{ UserData : has
     Users ||--o{ TrainingRecordSets : creates
     Users ||--o{ DailyTrainingRecords : has
+    Users ||--o{ SupplementMasters : owns
+    Users ||--o{ SupplementIntakeRecords : records
+    Users ||--o{ SupplementSchedules : creates
     
     TrainingMenus ||--o{ TrainingTags : has
     TrainingMenus ||--o{ TrainingRecordSets : uses
     TrainingMenus ||--o{ DailyTrainingRecords : uses
+    
+    SupplementMasters ||--o{ SupplementIntakeRecords : tracks
+    SupplementMasters ||--o{ SupplementSchedules : schedules
     
     TagMasters ||--o{ TrainingTags : defines
     
@@ -189,6 +203,44 @@ erDiagram
         datetime CreatedAt
         datetime UpdatedAt
     }
+    
+    SupplementMasters {
+        int SupplementId PK
+        int UserId FK
+        string SupplementName
+        string Unit
+        string Description
+        bool IsActive
+        datetime CreatedAt
+        datetime UpdatedAt
+    }
+    
+    SupplementIntakeRecords {
+        int RecordId PK
+        int UserId FK
+        int SupplementId FK
+        date IntakeDate
+        time IntakeTime
+        decimal Amount
+        string TimingType
+        string Memo
+        datetime CreatedAt
+        datetime UpdatedAt
+    }
+    
+    SupplementSchedules {
+        int ScheduleId PK
+        int UserId FK
+        int SupplementId FK
+        time ScheduleTime
+        decimal Amount
+        string TimingType
+        string DaysOfWeek
+        bool IsActive
+        string Memo
+        datetime CreatedAt
+        datetime UpdatedAt
+    }
 ```
 
 ## 5. API設計
@@ -217,7 +269,22 @@ erDiagram
 | GET | /api/training/schedules | スケジュール取得 | 必要 |
 | POST | /api/training/schedules | スケジュール作成 | 必要 |
 
-### 5.3 管理者エンドポイント
+### 5.4 サプリメントエンドポイント
+
+| メソッド | エンドポイント | 説明 | 認証 |
+|---------|---------------|------|------|
+| GET | /api/supplement/supplements | サプリメント一覧取得 | 必要 |
+| POST | /api/supplement/supplements | サプリメント登録 | 必要 |
+| PUT | /api/supplement/supplements/{id} | サプリメント更新 | 必要 |
+| DELETE | /api/supplement/supplements/{id} | サプリメント削除 | 必要 |
+| GET | /api/supplement/intakes | 摂取記録取得 | 必要 |
+| POST | /api/supplement/intakes | 摂取記録登録 | 必要 |
+| DELETE | /api/supplement/intakes/{id} | 摂取記録削除 | 必要 |
+| GET | /api/supplement/schedules | スケジュール一覧取得 | 必要 |
+| POST | /api/supplement/schedules | スケジュール作成 | 必要 |
+| DELETE | /api/supplement/schedules/{id} | スケジュール削除 | 必要 |
+
+### 5.5 管理者エンドポイント
 
 | メソッド | エンドポイント | 説明 | 認証 |
 |---------|---------------|------|------|
@@ -226,7 +293,7 @@ erDiagram
 | PUT | /api/admin/users/{id} | ユーザー更新 | Admin |
 | DELETE | /api/admin/users/{id} | ユーザー削除 | Admin |
 
-### 5.4 レスポンス形式
+### 5.6 レスポンス形式
 
 ```typescript
 // 成功レスポンス
@@ -454,7 +521,7 @@ Content-Security-Policy: default-src 'self'
 ### 11.1 必要な環境
 - Node.js 18+
 - .NET SDK 8.0+
-- PostgreSQL 15+
+- mssql server 2022
 - Docker Desktop
 - Git
 

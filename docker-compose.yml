@@ -32,7 +32,7 @@ services:
     environment:
       - ASPNETCORE_URLS=http://+:80
       - ASPNETCORE_ENVIRONMENT=Development
-      - CONNECTIONSTRINGS__DEFAULTCONNECTION=Server=db;Database=MessageRDB;User=sa;Password=Your_password123;Encrypt=false;
+      - CONNECTIONSTRINGS__DEFAULTCONNECTION=Server=db;Database=TrecPlansRDB;User=sa;Password=Your_password123;Encrypt=false;
       - JWT__SECRET=YwN7c!@#m02zL*sd82lMk!adwaf4d2rg
       - JWT__ISSUER=trecplans.local
       - JWT__AUDIENCE=trecplans_user
@@ -51,7 +51,7 @@ services:
       SA_PASSWORD: "Your_password123"
       ACCEPT_EULA: "Y"
     volumes:
-      - message_sqlserver_data:/var/opt/mssql
+      - trecplans_sqlserver_data:/var/opt/mssql
 
 volumes:
-  message_sqlserver_data:
+  trecplans_sqlserver_data:

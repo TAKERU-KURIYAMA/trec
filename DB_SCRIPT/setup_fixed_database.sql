@@ -4,7 +4,7 @@
 -- ===================================
 
 PRINT '===================================';
-PRINT 'MessageRDB 修正版セットアップ開始';
+PRINT 'TrecPlansRDB 修正版セットアップ開始';
 PRINT '===================================';
 PRINT '';
 
@@ -14,11 +14,11 @@ PRINT '';
 USE master;
 GO
 
-IF EXISTS (SELECT name FROM sys.databases WHERE name = 'MessageRDB')
+IF EXISTS (SELECT name FROM sys.databases WHERE name = 'TrecPlansRDB')
 BEGIN
-    PRINT '既存のMessageRDBを削除中...';
-    ALTER DATABASE MessageRDB SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
-    DROP DATABASE MessageRDB;
+    PRINT '既存のTrecPlansRDBを削除中...';
+    ALTER DATABASE TrecPlansRDB SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+    DROP DATABASE TrecPlansRDB;
     PRINT '既存データベース削除完了';
 END
 GO
@@ -26,10 +26,10 @@ GO
 -- ===================================
 -- 2. データベース作成
 -- ===================================
-PRINT '新しいMessageRDBを作成中...';
-CREATE DATABASE MessageRDB;
+PRINT '新しいTrecPlansRDBを作成中...';
+CREATE DATABASE TrecPlansRDB;
 GO
-USE MessageRDB;
+USE TrecPlansRDB;
 GO
 
 -- ===================================
@@ -197,7 +197,7 @@ PRINT '初期データ投入完了';
 -- ===================================
 PRINT '';
 PRINT '===================================';
-PRINT 'MessageRDB 修正版セットアップ完了';
+PRINT 'TrecPlansRDB 修正版セットアップ完了';
 PRINT '===================================';
 PRINT '';
 PRINT '作成されたテーブル:';

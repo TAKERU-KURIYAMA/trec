@@ -17,7 +17,7 @@ echo.
 
 REM 設定値（必要に応じて変更してください）
 set SERVER=localhost,1433
-set DATABASE=MessageRDB
+set DATABASE=TrecPlansRDB
 set USERNAME=sa
 
 REM パスワードの入力

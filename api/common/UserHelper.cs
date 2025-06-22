@@ -18,7 +18,7 @@ namespace Api.Common
         /// <param name="loginId">ログインID</param>
         /// <returns>ユーザー情報</returns>
         /// <exception cref="AppException">ユーザーが見つからない場合</exception>
-        public static User GetUser(MessageRDBContext context, string loginId)
+        public static User GetUser(TrecPlansRDBContext context, string loginId)
         {
             if (context == null) 
                 throw new ArgumentNullException(nameof(context));
@@ -46,7 +46,7 @@ namespace Api.Common
         /// <param name="userCommonId">ユーザー共通ID</param>
         /// <returns>ユーザー情報</returns>
         /// <exception cref="AppException">ユーザーが見つからない場合</exception>
-        public static User GetUserByCommonId(MessageRDBContext context, string userCommonId)
+        public static User GetUserByCommonId(TrecPlansRDBContext context, string userCommonId)
         {
             if (context == null) 
                 throw new ArgumentNullException(nameof(context));
@@ -74,7 +74,7 @@ namespace Api.Common
         /// <param name="loginId">ログインID</param>
         /// <returns>ユーザー情報</returns>
         /// <exception cref="AppException">ユーザーが見つからない場合</exception>
-        public static async Task<User> GetUserAsync(MessageRDBContext context, string loginId)
+        public static async Task<User> GetUserAsync(TrecPlansRDBContext context, string loginId)
         {
             if (context == null) 
                 throw new ArgumentNullException(nameof(context));
@@ -102,7 +102,7 @@ namespace Api.Common
         /// <param name="userCommonId">ユーザー共通ID</param>
         /// <returns>ユーザー情報</returns>
         /// <exception cref="AppException">ユーザーが見つからない場合</exception>
-        public static async Task<User> GetUserByCommonIdAsync(MessageRDBContext context, string userCommonId)
+        public static async Task<User> GetUserByCommonIdAsync(TrecPlansRDBContext context, string userCommonId)
         {
             if (context == null) 
                 throw new ArgumentNullException(nameof(context));
@@ -129,7 +129,7 @@ namespace Api.Common
         /// <param name="context">データベースコンテキスト</param>
         /// <param name="loginId">チェックするログインID</param>
         /// <returns>重複している場合true</returns>
-        public static async Task<bool> IsLoginIdDuplicateAsync(MessageRDBContext context, string loginId)
+        public static async Task<bool> IsLoginIdDuplicateAsync(TrecPlansRDBContext context, string loginId)
         {
             if (context == null) 
                 throw new ArgumentNullException(nameof(context));
@@ -148,7 +148,7 @@ namespace Api.Common
         /// <param name="context">データベースコンテキスト</param>
         /// <param name="userCommonId">チェックするユーザー共通ID</param>
         /// <returns>重複している場合true</returns>
-        public static async Task<bool> IsUserCommonIdDuplicateAsync(MessageRDBContext context, string userCommonId)
+        public static async Task<bool> IsUserCommonIdDuplicateAsync(TrecPlansRDBContext context, string userCommonId)
         {
             if (context == null) 
                 throw new ArgumentNullException(nameof(context));
@@ -167,7 +167,7 @@ namespace Api.Common
         /// <param name="context">データベースコンテキスト</param>
         /// <param name="loginId">ログインID</param>
         /// <returns>有効なユーザー情報</returns>
-        public static async Task<User?> GetActiveUserAsync(MessageRDBContext context, string loginId)
+        public static async Task<User?> GetActiveUserAsync(TrecPlansRDBContext context, string loginId)
         {
             if (context == null) 
                 throw new ArgumentNullException(nameof(context));

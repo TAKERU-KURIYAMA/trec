@@ -1,12 +1,12 @@
 -- ===================================
--- MessageRDBデータベース作成スクリプト（修正版）
+-- TrecPlansRDBデータベース作成スクリプト（修正版）
 -- APIモデルとの整合性を確保
 -- ===================================
 
 -- データベース作成
-CREATE DATABASE MessageRDB;
+CREATE DATABASE TrecPlansRDB;
 GO
-USE MessageRDB;
+USE TrecPlansRDB;
 GO
 
 -- ===================================
@@ -194,7 +194,7 @@ INSERT INTO ClientDataKeys (ClientId, DataKey, Description, IsRequired) VALUES
 GO
 
 PRINT '==================================='
-PRINT 'MessageRDBデータベース作成完了'
+PRINT 'TrecPlansRDBデータベース作成完了'
 PRINT '==================================='
 PRINT ''
 PRINT '作成されたテーブル:'

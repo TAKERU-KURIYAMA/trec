@@ -14,7 +14,7 @@ echo
 
 # 設定値（必要に応じて変更してください）
 SERVER=${SQL_SERVER:-"localhost,1433"}
-DATABASE=${SQL_DATABASE:-"MessageRDB"}
+DATABASE=${SQL_DATABASE:-"TrecPlansRDB"}
 USERNAME=${SQL_USERNAME:-"sa"}
 PASSWORD=${SQL_PASSWORD:-""}
 

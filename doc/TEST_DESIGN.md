@@ -1,4 +1,4 @@
-# Message システムテスト設計書
+# TrecPlans システムテスト設計書
 
 ## 1. テスト概要
 
@@ -296,6 +296,65 @@
 | データ永続化 | AsyncStorage | オフラインデータ保持 | High |
 | 状態管理 | Zustand | グローバル状態同期 | Medium |
 
+### 3.9 サプリメント管理テスト
+
+#### TC026: サプリメント登録テスト
+| テストケース | 入力値 | 期待結果 | 優先度 |
+|-------------|--------|----------|--------|
+| TC026-01 | 正常なサプリメント情報 | 登録成功、一覧に追加 | High |
+| TC026-02 | 空のサプリメント名 | バリデーションエラー | High |
+| TC026-03 | 重複サプリメント名 | 重複確認ダイアログ | Medium |
+| TC026-04 | 無効な単位形式 | バリデーションエラー | Medium |
+
+**テストデータ**:
+```json
+{
+  "valid_supplement": {
+    "supplementName": "プロテイン",
+    "unit": "g",
+    "description": "ホエイプロテイン"
+  },
+  "invalid_supplement": {
+    "supplementName": "",
+    "unit": "g",
+    "description": "説明"
+  }
+}
+```
+
+#### TC027: 摂取記録テスト
+| テストケース | 条件 | 期待結果 | 優先度 |
+|-------------|------|----------|--------|
+| TC027-01 | 正常な摂取記録 | 記録保存、一覧表示 | High |
+| TC027-02 | 過去の日付での記録 | 正常保存 | High |
+| TC027-03 | 未来の日付での記録 | エラー表示 | Medium |
+| TC027-04 | 無効な摂取量 | バリデーションエラー | Medium |
+| TC027-05 | 摂取記録削除 | 確認ダイアログ、削除実行 | High |
+
+#### TC028: スケジュール管理テスト
+| テストケース | 操作 | 期待結果 | 優先度 |
+|-------------|------|----------|--------|
+| TC028-01 | スケジュール作成 | 作成成功、一覧表示 | High |
+| TC028-02 | 重複時間のスケジュール | 重複警告表示 | Medium |
+| TC028-03 | スケジュール削除 | 確認ダイアログ、削除実行 | High |
+| TC028-04 | 曜日指定スケジュール | 指定曜日のみ有効 | Medium |
+
+#### TC029: サプリメント統計テスト
+| テストケース | データ条件 | 期待結果 | 優先度 |
+|-------------|-----------|----------|--------|
+| TC029-01 | 通常の摂取データ | 統計グラフ表示 | High |
+| TC029-02 | データなし | 初回利用メッセージ | Medium |
+| TC029-03 | 大量データ | パフォーマンス問題なし | Medium |
+| TC029-04 | 期間指定統計 | 指定期間の統計表示 | Medium |
+
+#### TC030: サプリメント通知テスト
+| テストケース | 条件 | 期待結果 | 優先度 |
+|-------------|------|----------|--------|
+| TC030-01 | スケジュール時間到達 | 摂取リマインダー通知 | High |
+| TC030-02 | 通知設定OFF | 通知なし | Medium |
+| TC030-03 | バックグラウンド通知 | アプリ非アクティブ時も通知 | Medium |
+| TC030-04 | 複数スケジュール | 各スケジュールで個別通知 | Low |
+
 ## 6. テスト自動化
 
 ### 6.1 単体テスト
@@ -307,9 +366,27 @@ describe('TrainingCard', () => {
   })
 })
 
+describe('SupplementModal', () => {
+  test('サプリメント追加', () => {
+    // テストコード
+  })
+})
+
 // Backend (xUnit)
 [Test]
 public async Task CreateTrainingRecord_ValidData_Success()
+{
+    // テストコード
+}
+
+[Test]
+public async Task CreateSupplement_ValidData_Success()
+{
+    // テストコード
+}
+
+[Test]
+public async Task RecordIntake_ValidData_Success()
 {
     // テストコード
 }
@@ -326,6 +403,22 @@ describe('Training API', () => {
       .expect(201)
   })
 })
+
+describe('Supplement API', () => {
+  test('POST /api/supplement/supplements', async () => {
+    const response = await request(app)
+      .post('/api/supplement/supplements')
+      .send(validSupplementData)
+      .expect(201)
+  })
+  
+  test('POST /api/supplement/intakes', async () => {
+    const response = await request(app)
+      .post('/api/supplement/intakes')
+      .send(validIntakeData)
+      .expect(201)
+  })
+})
 ```
 
 ### 6.3 E2Eテスト
@@ -337,6 +430,19 @@ test('ワークアウト完全フロー', async ({ page }) => {
   await page.fill('[data-test="password"]', 'password')
   await page.click('[data-test="login-btn"]')
   // ワークアウトフロー続行...
+})
+
+test('サプリメント管理フロー', async ({ page }) => {
+  await page.goto('/supplements')
+  await page.click('[data-test="add-supplement-btn"]')
+  await page.fill('[data-test="supplement-name"]', 'プロテイン')
+  await page.fill('[data-test="supplement-unit"]', 'g')
+  await page.click('[data-test="save-supplement-btn"]')
+  // 摂取記録追加...
+  await page.click('[data-test="add-intake-btn"]')
+  await page.selectOption('[data-test="supplement-select"]', 'プロテイン')
+  await page.fill('[data-test="intake-amount"]', '30')
+  await page.click('[data-test="save-intake-btn"]')
 })
 ```
 
@@ -351,6 +457,14 @@ VALUES ('test-user-1', 'USR_TEST001', 'test1@example.com', '$bcrypt_hash');
 -- テストメニュー
 INSERT INTO TrainingMenus (MenuId, JPName, ENName, Description)
 VALUES ('test_menu_1', 'テストメニュー', 'Test Menu', 'テスト用メニュー');
+
+-- テストサプリメント
+INSERT INTO SupplementMasters (UserId, SupplementName, Unit, Description, IsActive, CreatedAt, UpdatedAt)
+VALUES (1, 'テストプロテイン', 'g', 'テスト用プロテイン', true, NOW(), NOW());
+
+-- テスト摂取記録
+INSERT INTO SupplementIntakeRecords (UserId, SupplementId, IntakeDate, IntakeTime, Amount, TimingType, CreatedAt, UpdatedAt)
+VALUES (1, 1, '2024-01-15', '08:30:00', 30, '朝食後', NOW(), NOW());
 ```
 
 ### 7.2 テストデータクリーンアップ
@@ -359,6 +473,18 @@ VALUES ('test_menu_1', 'テストメニュー', 'Test Menu', 'テスト用メニ
 afterEach(async () => {
   await db.traininingRecordSets.deleteMany({
     where: { userCommonId: 'test-user-1' }
+  })
+  
+  await db.supplementIntakeRecords.deleteMany({
+    where: { userId: 1 }
+  })
+  
+  await db.supplementSchedules.deleteMany({
+    where: { userId: 1 }
+  })
+  
+  await db.supplementMasters.deleteMany({
+    where: { userId: 1 }
   })
 })
 ```

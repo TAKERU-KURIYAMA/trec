@@ -15,7 +15,7 @@ api/
 │   ├── ApiController.cs    # 基本API（バージョン情報など）
 │   └── TrainingController.cs # トレーニング関連API
 ├── Models/             # データベースモデル
-│   ├── MessageRDBContext.cs # Entity Framework Context
+│   ├── TrecPlansRDBContext.cs # Entity Framework Context
 │   ├── TrainingMenu.cs     # トレーニングメニュー
 │   ├── TrainingRecordSet.cs # トレーニング記録
 │   ├── User.cs             # ユーザー情報

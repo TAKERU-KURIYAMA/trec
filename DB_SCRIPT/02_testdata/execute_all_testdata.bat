@@ -12,7 +12,7 @@ REM 環境変数設定（必要に応じて変更）
 set SERVER=localhost,1433
 set USERNAME=sa
 set PASSWORD=Your_password123
-set DATABASE=MessageRDB
+set DATABASE=TrecPlansRDB
 
 echo データベース: %DATABASE%
 echo サーバー: %SERVER%
