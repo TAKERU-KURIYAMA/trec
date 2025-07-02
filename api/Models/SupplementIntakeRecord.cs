@@ -5,7 +5,7 @@ namespace Api.Models
     public partial class SupplementIntakeRecord
     {
         public int RecordId { get; set; }
-        public int UserId { get; set; }
+        public string UserCommonId { get; set; } = null!;
         public int SupplementId { get; set; }
         public DateTime IntakeDate { get; set; }
         public TimeSpan IntakeTime { get; set; }

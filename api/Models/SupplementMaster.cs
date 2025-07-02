@@ -12,7 +12,7 @@ namespace Api.Models
         }
 
         public int SupplementId { get; set; }
-        public int UserId { get; set; }
+        public string UserCommonId { get; set; } = null!;
         public string SupplementName { get; set; } = null!;
         public string Unit { get; set; } = null!;
         public string? Description { get; set; }

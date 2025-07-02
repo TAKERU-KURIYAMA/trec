@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Api.Models;
-using Api.common;
+using Api.Common;
 using API.Controllers;
 
 namespace Api.Controllers
@@ -31,9 +31,9 @@ namespace Api.Controllers
         {
             try
             {
-                var userId = GetRequiredUserId();
+                var userCommonId = GetRequiredUserId();
                 var supplements = await _context.SupplementMasters
-                    .Where(s => s.UserId == userId && s.IsActive)
+                    .Where(s => s.UserCommonId == userCommonId && s.IsActive)
                     .OrderBy(s => s.SupplementName)
                     .Select(s => new
                     {
@@ -46,7 +46,7 @@ namespace Api.Controllers
 
                 return Ok(new ApiResponse<object>
                 {
-                    Success = true,
+                    IsSuccess = true,
                     Data = supplements
                 });
             }
@@ -55,8 +55,8 @@ namespace Api.Controllers
                 _logger.LogError(ex, "Error getting supplements");
                 return StatusCode(500, new ApiResponse<object>
                 {
-                    Success = false,
-                    Message = "サプリメント一覧の取得に失敗しました"
+                    IsSuccess = false,
+                    UserMessage = "サプリメント一覧の取得に失敗しました"
                 });
             }
         }
@@ -66,10 +66,10 @@ namespace Api.Controllers
         {
             try
             {
-                var userId = GetRequiredUserId();
+                var userCommonId = GetRequiredUserId();
                 var supplement = new SupplementMaster
                 {
-                    UserId = userId,
+                    UserCommonId = userCommonId,
                     SupplementName = request.SupplementName,
                     Unit = request.Unit,
                     Description = request.Description,
@@ -83,7 +83,7 @@ namespace Api.Controllers
 
                 return Ok(new ApiResponse<object>
                 {
-                    Success = true,
+                    IsSuccess = true,
                     Data = new
                     {
                         supplement.SupplementId,
@@ -98,8 +98,8 @@ namespace Api.Controllers
                 _logger.LogError(ex, "Error creating supplement");
                 return StatusCode(500, new ApiResponse<object>
                 {
-                    Success = false,
-                    Message = "サプリメントの登録に失敗しました"
+                    IsSuccess = false,
+                    UserMessage = "サプリメントの登録に失敗しました"
                 });
             }
         }
@@ -109,16 +109,16 @@ namespace Api.Controllers
         {
             try
             {
-                var userId = GetRequiredUserId();
+                var userCommonId = GetRequiredUserId();
                 var supplement = await _context.SupplementMasters
-                    .FirstOrDefaultAsync(s => s.SupplementId == id && s.UserId == userId);
+                    .FirstOrDefaultAsync(s => s.SupplementId == id && s.UserCommonId == userCommonId);
 
                 if (supplement == null)
                 {
                     return NotFound(new ApiResponse<object>
                     {
-                        Success = false,
-                        Message = "サプリメントが見つかりません"
+                        IsSuccess = false,
+                        UserMessage = "サプリメントが見つかりません"
                     });
                 }
 
@@ -131,8 +131,8 @@ namespace Api.Controllers
 
                 return Ok(new ApiResponse<object>
                 {
-                    Success = true,
-                    Message = "サプリメントを更新しました"
+                    IsSuccess = true,
+                    UserMessage = "サプリメントを更新しました"
                 });
             }
             catch (Exception ex)
@@ -140,8 +140,8 @@ namespace Api.Controllers
                 _logger.LogError(ex, "Error updating supplement");
                 return StatusCode(500, new ApiResponse<object>
                 {
-                    Success = false,
-                    Message = "サプリメントの更新に失敗しました"
+                    IsSuccess = false,
+                    UserMessage = "サプリメントの更新に失敗しました"
                 });
             }
         }
@@ -151,16 +151,16 @@ namespace Api.Controllers
         {
             try
             {
-                var userId = GetRequiredUserId();
+                var userCommonId = GetRequiredUserId();
                 var supplement = await _context.SupplementMasters
-                    .FirstOrDefaultAsync(s => s.SupplementId == id && s.UserId == userId);
+                    .FirstOrDefaultAsync(s => s.SupplementId == id && s.UserCommonId == userCommonId);
 
                 if (supplement == null)
                 {
                     return NotFound(new ApiResponse<object>
                     {
-                        Success = false,
-                        Message = "サプリメントが見つかりません"
+                        IsSuccess = false,
+                        UserMessage = "サプリメントが見つかりません"
                     });
                 }
 
@@ -171,8 +171,8 @@ namespace Api.Controllers
 
                 return Ok(new ApiResponse<object>
                 {
-                    Success = true,
-                    Message = "サプリメントを削除しました"
+                    IsSuccess = true,
+                    UserMessage = "サプリメントを削除しました"
                 });
             }
             catch (Exception ex)
@@ -180,8 +180,8 @@ namespace Api.Controllers
                 _logger.LogError(ex, "Error deleting supplement");
                 return StatusCode(500, new ApiResponse<object>
                 {
-                    Success = false,
-                    Message = "サプリメントの削除に失敗しました"
+                    IsSuccess = false,
+                    UserMessage = "サプリメントの削除に失敗しました"
                 });
             }
         }
@@ -195,12 +195,12 @@ namespace Api.Controllers
         {
             try
             {
-                var userId = GetRequiredUserId();
+                var userCommonId = GetRequiredUserId();
                 var targetDate = date ?? DateTime.Today;
 
                 var records = await _context.SupplementIntakeRecords
                     .Include(r => r.Supplement)
-                    .Where(r => r.UserId == userId && r.IntakeDate == targetDate.Date)
+                    .Where(r => r.UserCommonId == userCommonId && r.IntakeDate == targetDate.Date)
                     .OrderBy(r => r.IntakeTime)
                     .Select(r => new
                     {
@@ -218,7 +218,7 @@ namespace Api.Controllers
 
                 return Ok(new ApiResponse<object>
                 {
-                    Success = true,
+                    IsSuccess = true,
                     Data = records
                 });
             }
@@ -227,8 +227,8 @@ namespace Api.Controllers
                 _logger.LogError(ex, "Error getting intake records");
                 return StatusCode(500, new ApiResponse<object>
                 {
-                    Success = false,
-                    Message = "摂取記録の取得に失敗しました"
+                    IsSuccess = false,
+                    UserMessage = "摂取記録の取得に失敗しました"
                 });
             }
         }
@@ -238,23 +238,23 @@ namespace Api.Controllers
         {
             try
             {
-                var userId = GetRequiredUserId();
+                var userCommonId = GetRequiredUserId();
                 
                 var supplement = await _context.SupplementMasters
-                    .FirstOrDefaultAsync(s => s.SupplementId == request.SupplementId && s.UserId == userId);
+                    .FirstOrDefaultAsync(s => s.SupplementId == request.SupplementId && s.UserCommonId == userCommonId);
 
                 if (supplement == null)
                 {
                     return NotFound(new ApiResponse<object>
                     {
-                        Success = false,
-                        Message = "サプリメントが見つかりません"
+                        IsSuccess = false,
+                        UserMessage = "サプリメントが見つかりません"
                     });
                 }
 
                 var record = new SupplementIntakeRecord
                 {
-                    UserId = userId,
+                    UserCommonId = userCommonId,
                     SupplementId = request.SupplementId,
                     IntakeDate = request.IntakeDate.Date,
                     IntakeTime = request.IntakeTime,
@@ -270,8 +270,8 @@ namespace Api.Controllers
 
                 return Ok(new ApiResponse<object>
                 {
-                    Success = true,
-                    Message = "摂取記録を保存しました",
+                    IsSuccess = true,
+                    UserMessage = "摂取記録を保存しました",
                     Data = new
                     {
                         record.RecordId,
@@ -291,8 +291,8 @@ namespace Api.Controllers
                 _logger.LogError(ex, "Error recording intake");
                 return StatusCode(500, new ApiResponse<object>
                 {
-                    Success = false,
-                    Message = "摂取記録の保存に失敗しました"
+                    IsSuccess = false,
+                    UserMessage = "摂取記録の保存に失敗しました"
                 });
             }
         }
@@ -302,16 +302,16 @@ namespace Api.Controllers
         {
             try
             {
-                var userId = GetRequiredUserId();
+                var userCommonId = GetRequiredUserId();
                 var record = await _context.SupplementIntakeRecords
-                    .FirstOrDefaultAsync(r => r.RecordId == id && r.UserId == userId);
+                    .FirstOrDefaultAsync(r => r.RecordId == id && r.UserCommonId == userCommonId);
 
                 if (record == null)
                 {
                     return NotFound(new ApiResponse<object>
                     {
-                        Success = false,
-                        Message = "摂取記録が見つかりません"
+                        IsSuccess = false,
+                        UserMessage = "摂取記録が見つかりません"
                     });
                 }
 
@@ -320,8 +320,8 @@ namespace Api.Controllers
 
                 return Ok(new ApiResponse<object>
                 {
-                    Success = true,
-                    Message = "摂取記録を削除しました"
+                    IsSuccess = true,
+                    UserMessage = "摂取記録を削除しました"
                 });
             }
             catch (Exception ex)
@@ -329,8 +329,8 @@ namespace Api.Controllers
                 _logger.LogError(ex, "Error deleting intake record");
                 return StatusCode(500, new ApiResponse<object>
                 {
-                    Success = false,
-                    Message = "摂取記録の削除に失敗しました"
+                    IsSuccess = false,
+                    UserMessage = "摂取記録の削除に失敗しました"
                 });
             }
         }
@@ -344,10 +344,10 @@ namespace Api.Controllers
         {
             try
             {
-                var userId = GetRequiredUserId();
+                var userCommonId = GetRequiredUserId();
                 var schedules = await _context.SupplementSchedules
                     .Include(s => s.Supplement)
-                    .Where(s => s.UserId == userId && s.IsActive)
+                    .Where(s => s.UserCommonId == userCommonId && s.IsActive)
                     .OrderBy(s => s.ScheduleTime)
                     .Select(s => new
                     {
@@ -365,7 +365,7 @@ namespace Api.Controllers
 
                 return Ok(new ApiResponse<object>
                 {
-                    Success = true,
+                    IsSuccess = true,
                     Data = schedules
                 });
             }
@@ -374,8 +374,8 @@ namespace Api.Controllers
                 _logger.LogError(ex, "Error getting schedules");
                 return StatusCode(500, new ApiResponse<object>
                 {
-                    Success = false,
-                    Message = "スケジュールの取得に失敗しました"
+                    IsSuccess = false,
+                    UserMessage = "スケジュールの取得に失敗しました"
                 });
             }
         }
@@ -385,23 +385,23 @@ namespace Api.Controllers
         {
             try
             {
-                var userId = GetRequiredUserId();
+                var userCommonId = GetRequiredUserId();
                 
                 var supplement = await _context.SupplementMasters
-                    .FirstOrDefaultAsync(s => s.SupplementId == request.SupplementId && s.UserId == userId);
+                    .FirstOrDefaultAsync(s => s.SupplementId == request.SupplementId && s.UserCommonId == userCommonId);
 
                 if (supplement == null)
                 {
                     return NotFound(new ApiResponse<object>
                     {
-                        Success = false,
-                        Message = "サプリメントが見つかりません"
+                        IsSuccess = false,
+                        UserMessage = "サプリメントが見つかりません"
                     });
                 }
 
                 var schedule = new SupplementSchedule
                 {
-                    UserId = userId,
+                    UserCommonId = userCommonId,
                     SupplementId = request.SupplementId,
                     ScheduleTime = request.ScheduleTime,
                     Amount = request.Amount,
@@ -418,8 +418,8 @@ namespace Api.Controllers
 
                 return Ok(new ApiResponse<object>
                 {
-                    Success = true,
-                    Message = "スケジュールを作成しました",
+                    IsSuccess = true,
+                    UserMessage = "スケジュールを作成しました",
                     Data = new
                     {
                         schedule.ScheduleId,
@@ -439,8 +439,8 @@ namespace Api.Controllers
                 _logger.LogError(ex, "Error creating schedule");
                 return StatusCode(500, new ApiResponse<object>
                 {
-                    Success = false,
-                    Message = "スケジュールの作成に失敗しました"
+                    IsSuccess = false,
+                    UserMessage = "スケジュールの作成に失敗しました"
                 });
             }
         }
@@ -450,16 +450,16 @@ namespace Api.Controllers
         {
             try
             {
-                var userId = GetRequiredUserId();
+                var userCommonId = GetRequiredUserId();
                 var schedule = await _context.SupplementSchedules
-                    .FirstOrDefaultAsync(s => s.ScheduleId == id && s.UserId == userId);
+                    .FirstOrDefaultAsync(s => s.ScheduleId == id && s.UserCommonId == userCommonId);
 
                 if (schedule == null)
                 {
                     return NotFound(new ApiResponse<object>
                     {
-                        Success = false,
-                        Message = "スケジュールが見つかりません"
+                        IsSuccess = false,
+                        UserMessage = "スケジュールが見つかりません"
                     });
                 }
 
@@ -470,8 +470,8 @@ namespace Api.Controllers
 
                 return Ok(new ApiResponse<object>
                 {
-                    Success = true,
-                    Message = "スケジュールを削除しました"
+                    IsSuccess = true,
+                    UserMessage = "スケジュールを削除しました"
                 });
             }
             catch (Exception ex)
@@ -479,8 +479,8 @@ namespace Api.Controllers
                 _logger.LogError(ex, "Error deleting schedule");
                 return StatusCode(500, new ApiResponse<object>
                 {
-                    Success = false,
-                    Message = "スケジュールの削除に失敗しました"
+                    IsSuccess = false,
+                    UserMessage = "スケジュールの削除に失敗しました"
                 });
             }
         }
@@ -492,15 +492,15 @@ namespace Api.Controllers
 
     public class CreateSupplementRequest
     {
-        public string SupplementName { get; set; }
-        public string Unit { get; set; }
+        public string SupplementName { get; set; } = string.Empty;
+        public string Unit { get; set; } = string.Empty;
         public string? Description { get; set; }
     }
 
     public class UpdateSupplementRequest
     {
-        public string SupplementName { get; set; }
-        public string Unit { get; set; }
+        public string SupplementName { get; set; } = string.Empty;
+        public string Unit { get; set; } = string.Empty;
         public string? Description { get; set; }
     }
 

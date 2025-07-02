@@ -271,7 +271,10 @@ public partial class TrecPlansRDBContext : DbContext
             entity.ToTable("supplement_master");
 
             entity.Property(e => e.SupplementId).HasColumnName("supplement_id");
-            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.UserCommonId)
+                .HasMaxLength(16)
+                .IsUnicode(false)
+                .HasColumnName("user_common_id");
             entity.Property(e => e.SupplementName)
                 .IsRequired()
                 .HasMaxLength(100)
@@ -294,7 +297,7 @@ public partial class TrecPlansRDBContext : DbContext
                 .HasColumnName("updated_at");
 
             entity.HasOne(d => d.User).WithMany(p => p.SupplementMasters)
-                .HasForeignKey(d => d.UserId)
+                .HasForeignKey(d => d.UserCommonId)
                 .HasConstraintName("FK_supplement_user");
         });
 
@@ -305,7 +308,10 @@ public partial class TrecPlansRDBContext : DbContext
             entity.ToTable("supplement_intake_records");
 
             entity.Property(e => e.RecordId).HasColumnName("record_id");
-            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.UserCommonId)
+                .HasMaxLength(16)
+                .IsUnicode(false)
+                .HasColumnName("user_common_id");
             entity.Property(e => e.SupplementId).HasColumnName("supplement_id");
             entity.Property(e => e.IntakeDate)
                 .HasColumnType("date")
@@ -328,7 +334,7 @@ public partial class TrecPlansRDBContext : DbContext
                 .HasColumnName("updated_at");
 
             entity.HasOne(d => d.User).WithMany(p => p.SupplementIntakeRecords)
-                .HasForeignKey(d => d.UserId)
+                .HasForeignKey(d => d.UserCommonId)
                 .HasConstraintName("FK_intake_user");
 
             entity.HasOne(d => d.Supplement).WithMany(p => p.SupplementIntakeRecords)
@@ -343,7 +349,10 @@ public partial class TrecPlansRDBContext : DbContext
             entity.ToTable("supplement_schedules");
 
             entity.Property(e => e.ScheduleId).HasColumnName("schedule_id");
-            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.UserCommonId)
+                .HasMaxLength(16)
+                .IsUnicode(false)
+                .HasColumnName("user_common_id");
             entity.Property(e => e.SupplementId).HasColumnName("supplement_id");
             entity.Property(e => e.ScheduleTime).HasColumnName("schedule_time");
             entity.Property(e => e.Amount)
@@ -369,7 +378,7 @@ public partial class TrecPlansRDBContext : DbContext
                 .HasColumnName("updated_at");
 
             entity.HasOne(d => d.User).WithMany(p => p.SupplementSchedules)
-                .HasForeignKey(d => d.UserId)
+                .HasForeignKey(d => d.UserCommonId)
                 .HasConstraintName("FK_schedule_user");
 
             entity.HasOne(d => d.Supplement).WithMany(p => p.SupplementSchedules)

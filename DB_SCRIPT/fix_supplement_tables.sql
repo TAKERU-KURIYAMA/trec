@@ -1,6 +1,20 @@
--- サプリメント管理機能のテーブル作成
+-- サプリメント関連テーブルの修正スクリプト
+-- user_id (INT) を user_common_id (VARCHAR(16)) に変更
 
--- サプリメントマスタテーブル
+-- 既存のテーブルを削除（存在する場合）
+IF OBJECT_ID('supplement_schedules', 'U') IS NOT NULL
+    DROP TABLE supplement_schedules;
+GO
+
+IF OBJECT_ID('supplement_intake_records', 'U') IS NOT NULL
+    DROP TABLE supplement_intake_records;
+GO
+
+IF OBJECT_ID('supplement_master', 'U') IS NOT NULL
+    DROP TABLE supplement_master;
+GO
+
+-- サプリメントマスタテーブル（修正版）
 CREATE TABLE supplement_master (
     supplement_id INT IDENTITY(1,1) PRIMARY KEY,
     user_common_id VARCHAR(16) NOT NULL,
@@ -13,7 +27,7 @@ CREATE TABLE supplement_master (
     CONSTRAINT FK_supplement_user FOREIGN KEY (user_common_id) REFERENCES Users(UserCommonId)
 );
 
--- サプリメント摂取記録テーブル
+-- サプリメント摂取記録テーブル（修正版）
 CREATE TABLE supplement_intake_records (
     record_id INT IDENTITY(1,1) PRIMARY KEY,
     user_common_id VARCHAR(16) NOT NULL,
@@ -29,7 +43,7 @@ CREATE TABLE supplement_intake_records (
     CONSTRAINT FK_intake_supplement FOREIGN KEY (supplement_id) REFERENCES supplement_master(supplement_id)
 );
 
--- サプリメント摂取スケジュールテーブル
+-- サプリメント摂取スケジュールテーブル（修正版）
 CREATE TABLE supplement_schedules (
     schedule_id INT IDENTITY(1,1) PRIMARY KEY,
     user_common_id VARCHAR(16) NOT NULL,
@@ -52,3 +66,6 @@ CREATE INDEX IX_intake_records_user_date ON supplement_intake_records(user_commo
 CREATE INDEX IX_intake_records_supplement_id ON supplement_intake_records(supplement_id);
 CREATE INDEX IX_schedules_user_common_id ON supplement_schedules(user_common_id);
 CREATE INDEX IX_schedules_supplement_id ON supplement_schedules(supplement_id);
+
+PRINT 'サプリメント関連テーブルの修正が完了しました。';
+GO

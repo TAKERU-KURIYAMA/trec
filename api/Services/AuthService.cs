@@ -174,8 +174,8 @@ public class AuthService : IAuthService
         
         for (int attempt = 1; attempt <= maxRetries; attempt++)
         {
-            // UUIDベースのIDを生成（より安全）
-            var candidateId = Guid.NewGuid().ToString("N"); // ハイフンなしの32文字
+            // UUIDベースのIDを生成（16文字に短縮）
+            var candidateId = Guid.NewGuid().ToString("N").Substring(0, 16); // 最初の16文字のみ使用
 
             // データベースで一意性を確認
             var exists = await _dbContext.Users

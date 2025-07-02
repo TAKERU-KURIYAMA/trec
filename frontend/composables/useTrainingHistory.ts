@@ -136,10 +136,15 @@ export function useTrainingHistory() {
 
       const response = await training.get(`/history?${params.toString()}`)
       
-      if (response.isSuccess && response.data?.records) {
-        records.value = response.data.records
+      if (response.records) {
+        // 日付フィールドをDateオブジェクトに変換
+        records.value = response.records.map((record: any) => ({
+          ...record,
+          createdAt: record.createdAt ? new Date(record.createdAt) : undefined,
+          updatedAt: record.updatedAt ? new Date(record.updatedAt) : undefined
+        }))
       } else {
-        throw new Error(response.userMessage || 'データの取得に失敗しました')
+        throw new Error('データの取得に失敗しました')
       }
 
     } catch (err: any) {
@@ -215,8 +220,9 @@ export function useTrainingHistory() {
     })
   }
 
-  function formatTime(date: Date): string {
-    return date.toLocaleTimeString('ja-JP', {
+  function formatTime(date: Date | string): string {
+    const dateObj = typeof date === 'string' ? new Date(date) : date
+    return dateObj.toLocaleTimeString('ja-JP', {
       hour: '2-digit',
       minute: '2-digit'
     })

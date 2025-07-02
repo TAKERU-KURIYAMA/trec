@@ -5,7 +5,7 @@ namespace Api.Models
     public partial class SupplementSchedule
     {
         public int ScheduleId { get; set; }
-        public int UserId { get; set; }
+        public string UserCommonId { get; set; } = null!;
         public int SupplementId { get; set; }
         public TimeSpan ScheduleTime { get; set; }
         public decimal Amount { get; set; }
