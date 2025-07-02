@@ -219,8 +219,8 @@ export const useAuthStore = defineStore('auth', () => {
   const logout = async () => {
     clearAuth()
     
-    // Redirect to login page
-    await navigateTo('/login')
+    // Redirect to home page instead of login
+    await navigateTo('/')
   }
 
   // Auto-initialize auth when store is first accessed
